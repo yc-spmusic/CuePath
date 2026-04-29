@@ -1,0 +1,7 @@
+feat(tools): 新增獨立的 YouTube 音檔下載小工具 (YTDL-Helper.bat v0.1.0)
+
+- 提供單一整合型 Batch 執行檔，方便使用者下載與執行
+- 內建互動式選單，支援自動檢查與安裝 yt-dlp 及 ffmpeg 依賴
+- 支援從 YouTube 網址直接下載音檔至 downloads 目錄
+- 包含相關免責聲明與使用規範
+- (同步更新 CuePath.html 介面文字為「匯入音檔」以配合工具獨立化)

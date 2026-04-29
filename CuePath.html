@@ -795,13 +795,13 @@
   <div class="ctrl-bar">
 
     <!-- Load -->
-    <button id="loadAudioButton" type="button" class="btn-load">載入音檔 Load Audio</button>
+    <button id="loadAudioButton" type="button" class="btn-load">匯入音檔 Import Audio</button>
 
     <!-- Media Info -->
     <div class="media-info">
       <div class="info-chip">
         <span class="info-chip-label">音檔 Audio</span>
-        <span class="info-chip-value" id="fileNameText">尚未載入</span>
+        <span class="info-chip-value" id="fileNameText">尚未匯入</span>
       </div>
       <div class="info-chip">
         <span class="info-chip-label">專案 Project</span>
@@ -815,7 +815,7 @@
         <span class="info-chip-label">總長 Length</span>
         <span class="info-chip-value mono" id="durationText">00:00.0</span>
       </div>
-      <div id="messageArea">尚未載入音檔</div>
+      <div id="messageArea">尚未匯入音檔</div>
     </div>
 
     <div class="downloads-panel" title="Chrome/Edge can remember an authorized local downloads folder.">
@@ -1248,17 +1248,17 @@ function loadStateFromStorage() {
 }
 
 function togglePlay() {
-  if (!dom.audioElement.src) { setMessage("請先載入音檔", true); return; }
+  if (!dom.audioElement.src) { setMessage("請先匯入音檔", true); return; }
   if (dom.audioElement.paused) { play(); } else { pause(); }
 }
 function play() {
-  if (!dom.audioElement.src) { setMessage("請先載入音檔", true); return; }
-  dom.audioElement.play().catch(() => setMessage("請先載入音檔", true));
+  if (!dom.audioElement.src) { setMessage("請先匯入音檔", true); return; }
+  dom.audioElement.play().catch(() => setMessage("請先匯入音檔", true));
 }
 function pause() { dom.audioElement.pause(); }
 
 function seekTo(seconds, options) {
-  if (!dom.audioElement.src) { setMessage("請先載入音檔", true); return; }
+  if (!dom.audioElement.src) { setMessage("請先匯入音檔", true); return; }
   const opts = options || {};
   if (opts.disableLoop && state.settings.loop.enabled) {
     state.settings.loop.enabled = false; saveState(false); renderLoop();
@@ -1296,7 +1296,7 @@ function needsCuePathProjectFileSave() {
 
 async function confirmBeforeReplacingAudio() {
   if (!needsCuePathProjectFileSave()) return true;
-  const shouldSave = window.confirm("目前專案尚未儲存為 CuePath 檔案。要先儲存再載入其他音檔嗎？\nCurrent project has no CuePath file yet. Save before loading another audio?");
+  const shouldSave = window.confirm("目前專案尚未儲存為 CuePath 檔案。要先儲存再匯入其他音檔嗎？\nCurrent project has no CuePath file yet. Save before importing another audio?");
   if (!shouldSave) return false;
   return await saveCuePathProjectFile();
 }
@@ -1329,7 +1329,7 @@ async function handleAudioFile(file, options) {
   if (!opts.skipReplaceGuard && hasLoadedAudioBody) {
     const canReplace = await confirmBeforeReplacingAudio();
     if (!canReplace) {
-      setMessage("已取消載入其他音檔", false);
+      setMessage("已取消匯入其他音檔", false);
       return;
     }
   }
@@ -1420,7 +1420,7 @@ async function scanDownloadsFolder(handle) {
 function renderDownloadsStatus() {
   if (!dom.downloadsStatusText) return;
   if (!("showDirectoryPicker" in window)) {
-    dom.downloadsStatusText.textContent = getDownloadsApiStatusText() + "；可用 Load Audio 載入 downloads 檔案";
+    dom.downloadsStatusText.textContent = getDownloadsApiStatusText() + "；可用 Import Audio 匯入 downloads 檔案";
     return;
   }
   if (!downloadsDirectoryHandle) {
@@ -1456,7 +1456,7 @@ async function refreshDownloadsStatus(options) {
 async function setDownloadsFolder() {
   if (!("showDirectoryPicker" in window)) {
     const isBrave = navigator.userAgent.includes("Brave");
-    let msg = "目前瀏覽器未開放 Folder API；請用 Load Audio 載入 downloads 檔案";
+    let msg = "目前瀏覽器未開放 Folder API；請用 Import Audio 匯入 downloads 檔案";
     if (isBrave) msg += " (Brave 使用者請檢查 brave://flags/#file-system-access-api)";
     setMessage(msg, true);
     renderDownloadsStatus();

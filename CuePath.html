@@ -1,0 +1,2049 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CuePath — 故事痕跡音樂藝術</title>
+  <style>
+    @font-face { font-family:'GenYoGothic TW'; font-weight:300; src:url('fonts/GenYoGothic-L.ttc') format('truetype'); font-display:swap; }
+    @font-face { font-family:'GenYoGothic TW'; font-weight:400; src:url('fonts/GenYoGothic-R.ttc') format('truetype'); font-display:swap; }
+    @font-face { font-family:'GenYoGothic TW'; font-weight:500; src:url('fonts/GenYoGothic-M.ttc') format('truetype'); font-display:swap; }
+    @font-face { font-family:'GenYoGothic TW'; font-weight:700; src:url('fonts/GenYoGothic-B.ttc') format('truetype'); font-display:swap; }
+
+    :root {
+      --bg:           #F7F3EE;
+      --surface:      #FFFFFF;
+      --surface-2:    #FBF8F4;
+      --border:       #E4D9CE;
+      --border-strong:#C9B8A8;
+      --text:         #251508;
+      --text-2:       #7C5638;
+      --text-muted:   #A87E5A;
+      --brand:        #3E2A1A;
+      --brand-mid:    #5E3D25;
+      --brand-light:  #C9A98A;
+      --brand-pale:   #F3EBE1;
+      --ok:           #1A6644;
+      --ok-bg:        #D1FAE5;
+      --ok-border:    #6EE7B7;
+      --doing:        #1749AA;
+      --doing-bg:     #DBEAFE;
+      --doing-border: #93C5FD;
+      --review:       #92400E;
+      --review-bg:    #FEF3C7;
+      --review-border:#FCD34D;
+      --todo:         #374151;
+      --todo-bg:      #F3F4F6;
+      --todo-border:  #D1D5DB;
+      --danger:       #991B1B;
+      --danger-bg:    #FEF2F2;
+      --danger-border:#FCA5A5;
+      --loop:         #7C3AED;
+      --loop-bg:      #F3E8FF;
+      --loop-border:  #C4B5FD;
+      --radius:       7px;
+      --radius-sm:    5px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      font-family: 'GenYoGothic TW', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body.drag-over::after {
+      content: "拖曳音檔或 CuePath 檔案至此";
+      position: fixed; inset: 12px; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      border: 3px dashed var(--brand-light);
+      border-radius: 14px;
+      background: rgba(247,243,238,0.94);
+      color: var(--brand); font-size: 22px; font-weight: 700;
+      pointer-events: none; letter-spacing: 0.03em;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    /* ══ TOP NAV ══ */
+    .top-nav {
+      background: var(--brand);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      height: 50px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.18);
+    }
+    body:not(.audio-loaded) .top-nav {
+      background: #E8E3DD;
+      border-bottom-color: var(--border);
+    }
+    body:not(.audio-loaded) .top-nav-logo img {
+      filter: none;
+      opacity: 0.38;
+    }
+    body:not(.audio-loaded) .top-nav-tag {
+      color: #9A8D82;
+    }
+    body:not(.audio-loaded) #projectTitleInput {
+      color: #5E5248;
+    }
+    body:not(.audio-loaded) .btn-nav {
+      background: rgba(255,255,255,0.42);
+      border-color: rgba(94,82,72,0.18);
+      color: #6F6258;
+    }
+    body:not(.audio-loaded) .btn-nav.btn-danger {
+      color: #9F5555;
+      border-color: rgba(153,27,27,0.18);
+      background: rgba(255,255,255,0.36);
+    }
+
+    .top-nav-logo { display: flex; align-items: center; flex-shrink: 0; }
+    .top-nav-logo img { height: 26px; filter: brightness(10); opacity: 0.9; }
+
+    .top-nav-sep { width: 1px; height: 20px; background: rgba(255,255,255,0.2); flex-shrink: 0; }
+
+    .top-nav-tag {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4); flex-shrink: 0;
+    }
+
+    #projectTitleInput {
+      flex: 1; min-width: 0;
+      background: transparent; border: none;
+      color: #fff; font-size: 14px; font-weight: 700;
+      padding: 4px 8px; border-radius: var(--radius-sm);
+      outline: none; letter-spacing: 0.01em;
+    }
+    #projectTitleInput:hover  { background: rgba(255,255,255,0.08); }
+    #projectTitleInput:focus  { background: rgba(255,255,255,0.13); box-shadow: 0 0 0 2px rgba(255,255,255,0.22); }
+
+    .nav-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+    .btn-nav {
+      height: 30px; padding: 0 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.09);
+      color: rgba(255,255,255,0.85);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.14s, border-color 0.14s;
+    }
+    .btn-nav:hover { background: rgba(255,255,255,0.17); border-color: rgba(255,255,255,0.35); }
+    .btn-nav.btn-danger { color: #FCA5A5; border-color: rgba(252,165,165,0.28); background: rgba(153,27,27,0.16); }
+    .btn-nav.btn-danger:hover { background: rgba(153,27,27,0.3); }
+
+    /* ══ CONTROL BAR ══ */
+    .ctrl-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .ctrl-divider {
+      width: 1px; height: 28px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Load audio */
+    .btn-load {
+      height: 36px; padding: 0 16px;
+      background: var(--brand); border: none; color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.13s;
+    }
+    .btn-load:hover { background: var(--brand-mid); }
+
+    /* Media info strip */
+    .media-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .info-chip {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .info-chip-label {
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .info-chip-value {
+      font-size: 12px; font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+    }
+    .info-chip-value.mono {
+      font-variant-numeric: tabular-nums;
+      font-size: 13px; font-weight: 700;
+      color: var(--brand);
+    }
+
+    /* Message area */
+    #messageArea {
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--brand-pale);
+      color: var(--brand-mid);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      line-height: 1.4;
+      max-width: 240px;
+    }
+    #messageArea.error {
+      background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border);
+    }
+
+    .downloads-panel {
+      min-width: 280px;
+      flex: 1 1 360px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      color: var(--text-2);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+    .downloads-title {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .downloads-status {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .btn-downloads {
+      height: 26px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-2);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-downloads:hover {
+      background: var(--brand-pale);
+      border-color: var(--brand-light);
+      color: var(--brand);
+    }
+
+    /* Transport row */
+    .transport-group {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .btn-play {
+      height: 36px; padding: 0 20px;
+      background: var(--brand); border: none; color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.13s;
+      min-width: 80px;
+    }
+    .btn-play:hover { background: var(--brand-mid); }
+
+    .btn-skip {
+      height: 34px; padding: 0 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      letter-spacing: -0.01em;
+      transition: background 0.12s, border-color 0.12s;
+      font-family: monospace;
+    }
+    .btn-skip:hover {
+      background: var(--brand-pale); border-color: var(--brand-light); color: var(--brand);
+    }
+
+    /* Rate buttons */
+    .rate-group {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .rate-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-right: 3px;
+    }
+
+    .rate-button {
+      height: 28px; padding: 0 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 11px; font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .rate-button.active {
+      background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700;
+    }
+    .rate-button:hover:not(.active) {
+      background: var(--brand-pale); border-color: var(--brand-light); color: var(--brand);
+    }
+
+    /* Loop group */
+    .loop-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .loop-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .loop-ab-pill {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--brand-pale);
+      font-size: 11px; font-variant-numeric: tabular-nums;
+    }
+    .loop-ab-pill .ab-item {
+      padding: 4px 9px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .loop-ab-pill .ab-item:first-child { border-right: 1px solid var(--border); }
+    .loop-ab-pill .ab-key {
+      font-weight: 800; color: var(--brand); font-size: 10px;
+    }
+    .loop-ab-pill .ab-val { font-weight: 500; color: var(--text); }
+    .loop-ab-pill.loop-active {
+      border-color: var(--loop-border);
+      background: var(--loop-bg);
+      color: var(--loop);
+    }
+    .loop-ab-pill.loop-active .ab-key,
+    .loop-ab-pill.loop-active .ab-val,
+    .info-chip-value.loop-active {
+      color: var(--loop);
+      font-weight: 800;
+    }
+
+    .btn-loop {
+      height: 30px; padding: 0 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 11px; font-weight: 500;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .btn-loop:hover { background: var(--brand-pale); border-color: var(--brand-light); color: var(--brand); }
+    .btn-loop.loop-on { background: var(--loop); border-color: var(--loop); color: #fff; font-weight: 800; }
+    .btn-loop.btn-add-region {
+      background: var(--brand-pale); border-color: var(--brand-light); color: var(--brand); font-weight: 700;
+    }
+    .btn-loop.btn-add-region:hover { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .btn-loop.btn-loop-set {
+      min-width: 42px;
+      padding: 0 9px;
+      background: var(--surface);
+      border-color: var(--brand-light);
+      color: var(--brand);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .btn-loop.btn-loop-set:hover { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+    /* ══ MAIN CONTENT ══ */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Timeline section */
+    .timeline-section {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px 10px;
+      flex-shrink: 0;
+    }
+
+    .cue-timeline {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: hidden;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .timeline-ruler {
+      position: relative; height: 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2); overflow: hidden;
+    }
+
+    .timeline-loop-track {
+      position: relative;
+      height: 28px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #fff, var(--brand-pale));
+      overflow: hidden;
+    }
+    .cue-timeline.loop-active .timeline-ruler,
+    .cue-timeline.loop-active .timeline-loop-track {
+      border-color: var(--loop-border);
+      background: linear-gradient(180deg, #fff, var(--loop-bg));
+    }
+
+    .timeline-tick {
+      position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border);
+    }
+
+    .timeline-tick-label {
+      position: absolute; top: 2px;
+      transform: translateX(-50%);
+      color: var(--text-muted); font-size: 10px; line-height: 1.2;
+      text-align: center; min-width: 48px; pointer-events: none;
+    }
+    .timeline-tick-label .tick-main { display: block; font-weight: 500; color: var(--text-2); }
+    .timeline-tick-label .tick-ms   { display: block; font-size: 9px; }
+    .cue-timeline.loop-active .timeline-tick-label,
+    .cue-timeline.loop-active .timeline-tick-label .tick-main,
+    .cue-timeline.loop-active .timeline-tick-label .tick-ms {
+      color: var(--loop);
+      font-weight: 800;
+    }
+
+    .timeline-body {
+      position: relative; height: 110px;
+      overflow: hidden;
+      background: linear-gradient(to bottom, transparent 45px, var(--border) 45px, var(--border) 46px, transparent 46px);
+      cursor: pointer;
+    }
+
+    .timeline-track { position: absolute; left: 0; right: 0; border-bottom: 1px solid rgba(228,217,206,0.5); }
+    .timeline-track.regions-track { top: 0; height: 46px; }
+    .timeline-track.markers-track { top: 46px; bottom: 0; border-bottom: 0; }
+
+    .timeline-waveform {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.72;
+      pointer-events: none;
+    }
+    .timeline-waveform-status {
+      position: absolute;
+      left: 12px;
+      bottom: 7px;
+      z-index: 1;
+      color: var(--text-muted);
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    .timeline-empty {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 12px; pointer-events: none;
+    }
+
+    .timeline-playhead {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: var(--brand); z-index: 10; pointer-events: auto;
+      cursor: ew-resize;
+      touch-action: none;
+    }
+    .cue-timeline.loop-active .timeline-playhead { background: var(--loop); }
+    .timeline-playhead::before {
+      content: "";
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
+      border-top: 7px solid var(--brand);
+    }
+    .cue-timeline.loop-active .timeline-playhead::before { border-top-color: var(--loop); }
+    .timeline-playhead::after {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 18px;
+      transform: translateX(-50%);
+      background: transparent;
+    }
+
+    .timeline-loop-point {
+      position: absolute;
+      top: 3px;
+      transform: translateX(-50%);
+      z-index: 9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .timeline-loop-point .loop-point-label {
+      padding: 2px 5px;
+      border: 1px solid var(--brand-light);
+      border-radius: 4px;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+    .timeline-loop-point .loop-point-arrow {
+      margin-top: -1px;
+      font-size: 13px;
+      color: var(--brand);
+    }
+    .cue-timeline.loop-active .timeline-loop-point,
+    .cue-timeline.loop-active .timeline-loop-point .loop-point-arrow {
+      color: var(--loop);
+    }
+    .cue-timeline.loop-active .timeline-loop-point .loop-point-label {
+      border-color: var(--loop-border);
+      background: var(--loop-bg);
+    }
+
+    .timeline-region {
+      position: absolute; top: 8px; height: 24px;
+      min-width: 6px; border-radius: 4px;
+      padding: 2px 7px; overflow: hidden;
+      white-space: nowrap; text-overflow: ellipsis;
+      cursor: pointer; z-index: 2;
+      font-size: 11px; font-weight: 500;
+    }
+    .timeline-region:hover, .timeline-marker:hover .timeline-marker-text {
+      outline: 2px solid var(--brand-light); outline-offset: 1px;
+    }
+
+    .timeline-marker {
+      position: absolute; top: 12px;
+      transform: translateX(-1px);
+      width: 1px; height: 52px; border-radius: 0;
+      padding: 0;
+      font-size: 11px; font-weight: 500;
+      overflow: visible; white-space: nowrap;
+      cursor: grab; z-index: 4;
+      border: 0;
+      background: transparent;
+      color: var(--brand);
+    }
+    .timeline-marker.lane-1 { top: 44px; }
+    .timeline-marker:active { cursor: grabbing; }
+    .timeline-marker::before {
+      content: ""; position: absolute; left: 0; top: -12px;
+      width: 2px; height: 52px;
+      background: currentColor; opacity: 0.95; transform: none;
+    }
+
+    .timeline-marker-handle {
+      position: absolute; top: -12px; bottom: 0; width: 10px;
+      cursor: ew-resize; opacity: 0;
+    }
+    .timeline-marker-handle.left  { left: -9px; }
+    .timeline-marker-handle.right { left: 1px; }
+    .timeline-marker-text {
+      position: absolute;
+      left: 7px; top: 0;
+      display: block;
+      max-width: 132px;
+      padding: 2px 6px;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      background: var(--surface);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-marker.status-todo   { color: var(--todo); }
+    .timeline-marker.status-doing  { color: var(--doing); }
+    .timeline-marker.status-review { color: var(--review); }
+    .timeline-marker.status-done   { color: var(--ok); }
+
+    .status-todo   { border: 1px solid var(--todo-border);   background: var(--todo-bg);   color: var(--todo);   }
+    .status-doing  { border: 1px solid var(--doing-border);  background: var(--doing-bg);  color: var(--doing);  }
+    .status-review { border: 1px solid var(--review-border); background: var(--review-bg); color: var(--review); }
+    .status-done   { border: 1px solid var(--ok-border);     background: var(--ok-bg);     color: var(--ok);     }
+
+    /* Audio */
+    .audio-wrap {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 18px 8px;
+      flex-shrink: 0;
+    }
+    audio { width: 100%; height: 32px; display: block; accent-color: var(--brand); }
+
+    /* ══ TABLES ══ */
+    .tables-area {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .tables-area::-webkit-scrollbar { width: 6px; }
+    .tables-area::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+    .table-panel {
+      padding: 12px 16px 24px;
+      border-right: 1px solid var(--border);
+      min-height: 100%;
+    }
+    .table-panel:last-child { border-right: none; }
+
+    .table-panel-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .table-panel-title {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--brand);
+    }
+
+    .btn-add {
+      height: 28px; padding: 0 12px;
+      background: var(--brand); border: none; color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: background 0.12s;
+    }
+    .btn-add:hover { background: var(--brand-mid); }
+
+    .table-wrap { width: 100%; overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+
+    th, td {
+      border-top: 1px solid var(--border);
+      padding: 6px 5px; vertical-align: top; text-align: left;
+    }
+    th {
+      color: var(--text-muted); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      background: var(--surface-2); border-top: none;
+      border-bottom: 1px solid var(--border); padding: 7px 5px;
+    }
+    tr:hover td { background: var(--brand-pale); }
+
+    td.time-cell {
+      width: 68px; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      color: var(--brand); font-size: 12px; font-weight: 600;
+    }
+    td.small-cell  { width: 78px; }
+    td.actions-cell { width: 100px; }
+
+    .row-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    input[type="text"], select, textarea {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text); background: var(--surface);
+      padding: 4px 7px; width: 100%; font-size: 12px;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--brand-light);
+      box-shadow: 0 0 0 2px rgba(201,169,138,0.22);
+    }
+    textarea { min-height: 48px; resize: vertical; }
+
+    .btn-row {
+      height: 26px; padding: 0 7px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2); font-size: 11px; font-weight: 500;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.11s;
+    }
+    .btn-row:hover { background: var(--brand-pale); border-color: var(--brand-light); color: var(--brand); }
+    .btn-row.btn-danger { color: var(--danger); border-color: var(--danger-border); background: var(--danger-bg); }
+    .btn-row.btn-danger:hover { background: #FEE2E2; }
+
+    .empty {
+      color: var(--text-muted); padding: 18px 6px;
+      font-size: 12px; border-top: 1px solid var(--border); text-align: center;
+    }
+
+    .markers-table th:nth-child(1), .markers-table td:nth-child(1) { width: 70px; }
+    .markers-table th:nth-child(4), .markers-table td:nth-child(4) { width: 88px; }
+    .markers-table th:nth-child(5), .markers-table td:nth-child(5) { width: 78px; }
+    .markers-table th:nth-child(6), .markers-table td:nth-child(6) { width: 100px; }
+
+    .regions-table th:nth-child(1), .regions-table td:nth-child(1),
+    .regions-table th:nth-child(2), .regions-table td:nth-child(2),
+    .regions-table th:nth-child(3), .regions-table td:nth-child(3) { width: 68px; }
+    .regions-table th:nth-child(6), .regions-table td:nth-child(6) { width: 88px; }
+    .regions-table th:nth-child(7), .regions-table td:nth-child(7) { width: 78px; }
+    .regions-table th:nth-child(8), .regions-table td:nth-child(8) { width: 100px; }
+
+    .hidden-file { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ══ TOP NAV ══ -->
+  <nav class="top-nav">
+    <div class="top-nav-logo"><img src="assets/logo-icon.png" alt="Story Path Music"></div>
+    <div class="top-nav-sep"></div>
+    <span class="top-nav-tag">CuePath</span>
+    <input id="projectTitleInput" type="text" aria-label="Project Title" spellcheck="false">
+    <div class="nav-actions">
+      <button id="importJsonButton"    type="button" class="btn-nav">匯入 Import</button>
+      <button id="exportJsonButton"    type="button" class="btn-nav">匯出 CuePath</button>
+      <button id="exportCsvButton"     type="button" class="btn-nav">匯出 CSV</button>
+      <button id="exportMarkdownButton" type="button" class="btn-nav">匯出 MD</button>
+      <button id="clearProjectButton"  type="button" class="btn-nav btn-danger">清除 Clear</button>
+    </div>
+  </nav>
+
+  <input id="audioFileInput" class="hidden-file" type="file" accept="audio/*">
+  <input id="jsonFileInput"  class="hidden-file" type="file" accept=".cuepath,.json,application/json">
+
+  <!-- ══ CONTROL BAR ══ -->
+  <div class="ctrl-bar">
+
+    <!-- Load -->
+    <button id="loadAudioButton" type="button" class="btn-load">載入音檔 Load Audio</button>
+
+    <!-- Media Info -->
+    <div class="media-info">
+      <div class="info-chip">
+        <span class="info-chip-label">音檔 Audio</span>
+        <span class="info-chip-value" id="fileNameText">尚未載入</span>
+      </div>
+      <div class="info-chip">
+        <span class="info-chip-label">位置 Now</span>
+        <span class="info-chip-value mono" id="currentTimeText">00:00.0</span>
+      </div>
+      <div class="info-chip">
+        <span class="info-chip-label">總長 Length</span>
+        <span class="info-chip-value mono" id="durationText">00:00.0</span>
+      </div>
+      <div class="loop-ab-pill" title="Loop A / B">
+        <span class="ab-item"><span class="ab-key">A</span><span class="ab-val" id="loopAText">--:--.-</span></span>
+        <span class="ab-item"><span class="ab-key">B</span><span class="ab-val" id="loopBText">--:--.-</span></span>
+      </div>
+      <div id="messageArea">尚未載入音檔</div>
+    </div>
+
+    <div class="downloads-panel" title="Chrome/Edge can remember an authorized local downloads folder.">
+      <span class="downloads-title">Downloads</span>
+      <span id="downloadsStatusText" class="downloads-status">下載到 downloads 資料夾 / Save to downloads folder</span>
+      <button id="setDownloadsFolderButton" type="button" class="btn-downloads">設定 Set</button>
+      <button id="refreshDownloadsButton" type="button" class="btn-downloads">更新 Refresh</button>
+    </div>
+
+    <div class="ctrl-divider"></div>
+
+    <!-- Transport -->
+    <div class="transport-group">
+      <button id="skipLargeBackButton"  type="button" class="btn-skip" title="-10s">◀◀◀◀</button>
+      <button id="skipFiveBackButton"   type="button" class="btn-skip" title="-5s">◀◀◀</button>
+      <button id="skipSmallBackButton"  type="button" class="btn-skip" title="-3s">◀◀</button>
+      <button id="skipOneBackButton"    type="button" class="btn-skip" title="-1s">◀</button>
+      <button id="playPauseButton"      type="button" class="btn-play">播放 Play</button>
+      <button id="skipOneForwardButton"  type="button" class="btn-skip" title="+1s">▶</button>
+      <button id="skipSmallForwardButton" type="button" class="btn-skip" title="+3s">▶▶</button>
+      <button id="skipFiveForwardButton"  type="button" class="btn-skip" title="+5s">▶▶▶</button>
+      <button id="skipLargeForwardButton" type="button" class="btn-skip" title="+10s">▶▶▶▶</button>
+      <!-- goStartButton kept hidden for keyboard shortcut binding -->
+      <button id="goStartButton" type="button" style="display:none"></button>
+    </div>
+
+    <div class="ctrl-divider"></div>
+
+    <!-- Playback Rate -->
+    <div class="rate-group">
+      <span class="rate-label">速度 Speed</span>
+      <div id="playbackRateButtons" style="display:contents"></div>
+    </div>
+
+    <div class="ctrl-divider"></div>
+
+    <!-- A-B Loop -->
+    <div class="loop-group">
+      <span class="loop-label">Loop</span>
+      <button id="setAButton" type="button" class="btn-loop btn-loop-set" title="Set Loop A">A▼</button>
+      <button id="setBButton" type="button" class="btn-loop btn-loop-set" title="Set Loop B">B▼</button>
+      <button id="toggleLoopButton"       type="button" class="btn-loop">循環關 Loop Off</button>
+      <button id="clearLoopButton"        type="button" class="btn-loop">清除 Clear</button>
+      <button id="addRegionFromLoopButton" type="button" class="btn-loop btn-add-region">＋區段 Region</button>
+    </div>
+
+  </div>
+
+  <!-- ══ MAIN CONTENT ══ -->
+  <div class="main-content">
+
+    <!-- Timeline -->
+    <div class="timeline-section">
+      <div id="cueTimeline" class="cue-timeline" aria-label="Cue timeline"></div>
+    </div>
+
+    <!-- Audio player -->
+    <div class="audio-wrap">
+      <audio id="audioElement" controls></audio>
+    </div>
+
+    <!-- Tables -->
+    <div class="tables-area">
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <span class="table-panel-title">Markers</span>
+          <button id="addMarkerButton" type="button" class="btn-add">＋ 新增 Marker / Add</button>
+        </div>
+        <div id="markersContainer" class="table-wrap"></div>
+      </div>
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <span class="table-panel-title">Regions</span>
+          <button id="addRegionButton" type="button" class="btn-add">＋ 從 Loop 建立 / Add</button>
+        </div>
+        <div id="regionsContainer" class="table-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+
+const SCHEMA_VERSION = "cuepath-html-v1";
+const STORAGE_KEY = "cuepath:html:mvp";
+const DOWNLOADS_DB_NAME = "cuepath-downloads-db";
+const DOWNLOADS_STORE_NAME = "handles";
+const DOWNLOADS_HANDLE_KEY = "downloads";
+const STATUS_OPTIONS = ["todo", "doing", "review", "done"];
+const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+
+function createInitialState() {
+  const now = new Date().toISOString();
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    project: { title: "Untitled Project", createdAt: now, updatedAt: now },
+    media: { type: "audio", source: "local", fileName: null, duration: null },
+    settings: { playbackRate: 1, skipSmall: 3, skipLarge: 10, loop: { enabled: false, a: null, b: null } },
+    markers: [],
+    regions: []
+  };
+}
+
+let state = createInitialState();
+let currentObjectUrl = null;
+let hasLoadedAudioBody = false;
+let markerDrag = null;
+let playheadDrag = null;
+let suppressNextMarkerClick = false;
+let downloadsDirectoryHandle = null;
+let downloadsSummary = null;
+let waveformPeaks = null;
+let waveformStatus = "";
+let waveformBuildId = 0;
+let hasProjectFileReference = false;
+let projectFileSavePrompted = false;
+
+const dom = {
+  projectTitleInput: document.getElementById("projectTitleInput"),
+  loadAudioButton: document.getElementById("loadAudioButton"),
+  importJsonButton: document.getElementById("importJsonButton"),
+  exportJsonButton: document.getElementById("exportJsonButton"),
+  exportCsvButton: document.getElementById("exportCsvButton"),
+  exportMarkdownButton: document.getElementById("exportMarkdownButton"),
+  clearProjectButton: document.getElementById("clearProjectButton"),
+  audioFileInput: document.getElementById("audioFileInput"),
+  jsonFileInput: document.getElementById("jsonFileInput"),
+  fileNameText: document.getElementById("fileNameText"),
+  currentTimeText: document.getElementById("currentTimeText"),
+  durationText: document.getElementById("durationText"),
+  messageArea: document.getElementById("messageArea"),
+  downloadsStatusText: document.getElementById("downloadsStatusText"),
+  setDownloadsFolderButton: document.getElementById("setDownloadsFolderButton"),
+  refreshDownloadsButton: document.getElementById("refreshDownloadsButton"),
+  cueTimeline: document.getElementById("cueTimeline"),
+  audioElement: document.getElementById("audioElement"),
+  skipLargeBackButton: document.getElementById("skipLargeBackButton"),
+  skipFiveBackButton: document.getElementById("skipFiveBackButton"),
+  skipSmallBackButton: document.getElementById("skipSmallBackButton"),
+  skipOneBackButton: document.getElementById("skipOneBackButton"),
+  playPauseButton: document.getElementById("playPauseButton"),
+  skipOneForwardButton: document.getElementById("skipOneForwardButton"),
+  skipSmallForwardButton: document.getElementById("skipSmallForwardButton"),
+  skipFiveForwardButton: document.getElementById("skipFiveForwardButton"),
+  skipLargeForwardButton: document.getElementById("skipLargeForwardButton"),
+  goStartButton: document.getElementById("goStartButton"),
+  playbackRateButtons: document.getElementById("playbackRateButtons"),
+  setAButton: document.getElementById("setAButton"),
+  setBButton: document.getElementById("setBButton"),
+  loopAbPill: document.querySelector(".loop-ab-pill"),
+  loopAText: document.getElementById("loopAText"),
+  loopBText: document.getElementById("loopBText"),
+  toggleLoopButton: document.getElementById("toggleLoopButton"),
+  clearLoopButton: document.getElementById("clearLoopButton"),
+  addRegionFromLoopButton: document.getElementById("addRegionFromLoopButton"),
+  addMarkerButton: document.getElementById("addMarkerButton"),
+  addRegionButton: document.getElementById("addRegionButton"),
+  markersContainer: document.getElementById("markersContainer"),
+  regionsContainer: document.getElementById("regionsContainer")
+};
+
+function secondsToTimecode(seconds) {
+  const safeSeconds = Number.isFinite(seconds) && seconds >= 0 ? seconds : 0;
+  const totalTenths = Math.round(safeSeconds * 10);
+  const minutes = Math.floor(totalTenths / 600);
+  const secondPart = Math.floor((totalTenths % 600) / 10);
+  const tenthPart = totalTenths % 10;
+  return String(minutes).padStart(2, "0") + ":" + String(secondPart).padStart(2, "0") + "." + String(tenthPart);
+}
+
+function parseTags(input) { return String(input || "").split(",").map(t => t.trim()).filter(Boolean); }
+function tagsToInput(tags) { return Array.isArray(tags) ? tags.join(", ") : ""; }
+function generateId(prefix) { return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9); }
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeCsvValue(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  if (/[",\r\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+
+function escapeMarkdownCell(value) {
+  return String(value === null || value === undefined ? "" : value).replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes) || 0;
+  if (value < 1024) return value + " B";
+  const units = ["KB", "MB", "GB", "TB"];
+  let size = value / 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return size.toFixed(size >= 10 ? 1 : 2) + " " + units[unitIndex];
+}
+
+function sanitizeFilename(name) {
+  return (String(name || "").trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")) || "cuepath-project";
+}
+
+function filenameToProjectTitle(fileName) {
+  const name = String(fileName || "").trim();
+  return name.replace(/\.[^/.\\]+$/, "") || "Untitled Project";
+}
+
+function getDownloadsApiStatusText() {
+  const hasDirectoryPicker = "showDirectoryPicker" in window;
+  const secure = window.isSecureContext === true;
+  const protocol = window.location.protocol || "unknown:";
+  if (hasDirectoryPicker && secure) {
+    return "Folder API 可用 / available (" + protocol + ")";
+  }
+  if (hasDirectoryPicker && !secure) {
+    return "Folder API 存在但非 secure context / open via localhost";
+  }
+  return "Folder API 不可用 / unavailable (" + protocol + ")";
+}
+
+function isAudioFile(f) { return Boolean(f && typeof f.type === "string" && f.type.indexOf("audio/") === 0); }
+function isCuePathFile(f) {
+  const n = f && typeof f.name === "string" ? f.name.toLowerCase() : "";
+  return n.endsWith(".cuepath") || n.endsWith(".cuepath.json") || n.endsWith(".json");
+}
+function isCuePathFileName(name) {
+  const n = String(name || "").toLowerCase();
+  return n.endsWith(".cuepath") || n.endsWith(".cuepath.json");
+}
+function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+
+function getTimelineDuration() {
+  if (Number.isFinite(dom.audioElement.duration) && dom.audioElement.duration > 0) return dom.audioElement.duration;
+  if (Number.isFinite(state.media.duration) && state.media.duration > 0) return state.media.duration;
+  return null;
+}
+
+function getTimelinePointerTime(event) {
+  const duration = getTimelineDuration();
+  if (!duration || !dom.cueTimeline) return null;
+  const rect = dom.cueTimeline.getBoundingClientRect();
+  return clamp((event.clientX - rect.left) / rect.width, 0, 1) * duration;
+}
+
+function isInteractiveTimelineTarget(target) {
+  return Boolean(target && target.closest && target.closest(".timeline-marker, .timeline-region, .timeline-loop-point"));
+}
+
+async function buildWaveformPeaks(file) {
+  const buildId = ++waveformBuildId;
+  waveformPeaks = null;
+  waveformStatus = "音波分析中 / analyzing waveform...";
+  renderTimeline();
+  try {
+    if (!file || typeof file.arrayBuffer !== "function") throw new Error("Audio file unavailable");
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) throw new Error("Web Audio API unavailable");
+    const arrayBuffer = await file.arrayBuffer();
+    if (buildId !== waveformBuildId) return;
+    const audioContext = new AudioContextCtor();
+    let audioBuffer;
+    try {
+      audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    } finally {
+      if (audioContext.close) audioContext.close();
+    }
+    if (buildId !== waveformBuildId) return;
+    const bucketCount = 1800;
+    const peaks = new Array(bucketCount).fill(0);
+    const channelCount = audioBuffer.numberOfChannels;
+    const length = audioBuffer.length;
+    const samplesPerBucket = Math.max(1, Math.floor(length / bucketCount));
+    let maxPeak = 0;
+    for (let i = 0; i < bucketCount; i++) {
+      const start = i * samplesPerBucket;
+      const end = i === bucketCount - 1 ? length : Math.min(length, start + samplesPerBucket);
+      let peak = 0;
+      for (let ch = 0; ch < channelCount; ch++) {
+        const data = audioBuffer.getChannelData(ch);
+        for (let j = start; j < end; j++) {
+          const value = Math.abs(data[j] || 0);
+          if (value > peak) peak = value;
+        }
+      }
+      peaks[i] = peak;
+      if (peak > maxPeak) maxPeak = peak;
+    }
+    waveformPeaks = maxPeak > 0 ? peaks.map(v => v / maxPeak) : peaks;
+    waveformStatus = "";
+    renderTimeline();
+  } catch (error) {
+    if (buildId !== waveformBuildId) return;
+    waveformPeaks = null;
+    waveformStatus = "無法產生音波圖 / waveform unavailable";
+    renderTimeline();
+  }
+}
+
+function drawWaveform(canvas) {
+  if (!canvas || !waveformPeaks || !waveformPeaks.length) return;
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.floor(rect.width * ratio));
+  const height = Math.max(1, Math.floor(rect.height * ratio));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+  const center = height / 2;
+  const barWidth = Math.max(1, Math.ceil(width / waveformPeaks.length));
+  ctx.fillStyle = state.settings.loop.enabled ? "rgba(124, 58, 237, 0.28)" : "rgba(94, 61, 37, 0.22)";
+  for (let x = 0; x < width; x += barWidth) {
+    const peakIndex = Math.min(waveformPeaks.length - 1, Math.floor((x / width) * waveformPeaks.length));
+    const amp = Math.max(1, waveformPeaks[peakIndex] * height * 0.45);
+    ctx.fillRect(x, center - amp, barWidth, amp * 2);
+  }
+  ctx.fillStyle = state.settings.loop.enabled ? "rgba(124, 58, 237, 0.08)" : "rgba(62, 42, 26, 0.06)";
+  ctx.fillRect(0, center - 1, width, 2);
+}
+
+function setMessage(msg, isError) {
+  dom.messageArea.textContent = msg;
+  dom.messageArea.classList.toggle("error", Boolean(isError));
+}
+
+function updateTimestamp() { state.project.updatedAt = new Date().toISOString(); }
+function sortMarkers() { state.markers.sort((a, b) => a.time - b.time); }
+function sortRegions() { state.regions.sort((a, b) => a.start - b.start); }
+function normalizeStatus(v) { return STATUS_OPTIONS.includes(v) ? v : "todo"; }
+
+function normalizeImportedState(input) {
+  const base = createInitialState();
+  const imp = input && typeof input === "object" ? input : {};
+  const project = imp.project && typeof imp.project === "object" ? imp.project : {};
+  const media = imp.media && typeof imp.media === "object" ? imp.media : {};
+  const settings = imp.settings && typeof imp.settings === "object" ? imp.settings : {};
+  const loop = settings.loop && typeof settings.loop === "object" ? settings.loop : {};
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    project: {
+      title: typeof project.title === "string" ? project.title : base.project.title,
+      createdAt: typeof project.createdAt === "string" ? project.createdAt : base.project.createdAt,
+      updatedAt: typeof project.updatedAt === "string" ? project.updatedAt : base.project.updatedAt
+    },
+    media: {
+      type: "audio", source: "local",
+      fileName: typeof media.fileName === "string" ? media.fileName : null,
+      duration: Number.isFinite(media.duration) ? media.duration : null
+    },
+    settings: {
+      playbackRate: PLAYBACK_RATES.includes(Number(settings.playbackRate)) ? Number(settings.playbackRate) : 1,
+      skipSmall: 3, skipLarge: 10,
+      loop: { enabled: Boolean(loop.enabled), a: Number.isFinite(loop.a) ? loop.a : null, b: Number.isFinite(loop.b) ? loop.b : null }
+    },
+    markers: Array.isArray(imp.markers) ? imp.markers.map(normalizeMarker).filter(Boolean) : [],
+    regions: Array.isArray(imp.regions) ? imp.regions.map(normalizeRegion).filter(Boolean) : []
+  };
+}
+
+function normalizeMarker(m) {
+  if (!m || !Number.isFinite(m.time)) return null;
+  const now = new Date().toISOString();
+  return {
+    id: typeof m.id === "string" && m.id ? m.id : generateId("marker"),
+    time: Math.max(0, m.time),
+    label: typeof m.label === "string" ? m.label : "Marker",
+    note: typeof m.note === "string" ? m.note : "",
+    tags: Array.isArray(m.tags) ? m.tags.map(String) : [],
+    status: normalizeStatus(m.status),
+    createdAt: typeof m.createdAt === "string" ? m.createdAt : now,
+    updatedAt: typeof m.updatedAt === "string" ? m.updatedAt : now
+  };
+}
+
+function normalizeRegion(r) {
+  if (!r || !Number.isFinite(r.start) || !Number.isFinite(r.end)) return null;
+  const now = new Date().toISOString();
+  return {
+    id: typeof r.id === "string" && r.id ? r.id : generateId("region"),
+    start: Math.max(0, r.start), end: Math.max(0, r.end),
+    label: typeof r.label === "string" ? r.label : "Region",
+    note: typeof r.note === "string" ? r.note : "",
+    tags: Array.isArray(r.tags) ? r.tags.map(String) : [],
+    status: normalizeStatus(r.status),
+    createdAt: typeof r.createdAt === "string" ? r.createdAt : now,
+    updatedAt: typeof r.updatedAt === "string" ? r.updatedAt : now
+  };
+}
+
+function validateCuePathJson(data) {
+  return Boolean(data && data.schemaVersion === SCHEMA_VERSION && data.project && data.media && data.settings && Array.isArray(data.markers) && Array.isArray(data.regions));
+}
+
+function saveState(showMsg) {
+  updateTimestamp();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (showMsg) setMessage("已儲存", false);
+}
+
+function loadStateFromStorage() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+  try {
+    const parsed = JSON.parse(saved);
+    if (validateCuePathJson(parsed)) { state = normalizeImportedState(parsed); sortMarkers(); sortRegions(); }
+  } catch(e) { setMessage("儲存資料無效", true); }
+}
+
+function togglePlay() {
+  if (!dom.audioElement.src) { setMessage("請先載入音檔", true); return; }
+  if (dom.audioElement.paused) { play(); } else { pause(); }
+}
+function play() {
+  if (!dom.audioElement.src) { setMessage("請先載入音檔", true); return; }
+  dom.audioElement.play().catch(() => setMessage("請先載入音檔", true));
+}
+function pause() { dom.audioElement.pause(); }
+
+function seekTo(seconds, options) {
+  if (!dom.audioElement.src) { setMessage("請先載入音檔", true); return; }
+  const opts = options || {};
+  if (opts.disableLoop && state.settings.loop.enabled) {
+    state.settings.loop.enabled = false; saveState(false); renderLoop();
+  }
+  const dur = Number.isFinite(dom.audioElement.duration) ? dom.audioElement.duration : 0;
+  dom.audioElement.currentTime = clamp(seconds, 0, dur || Number.MAX_SAFE_INTEGER);
+  renderTimeDisplays();
+}
+
+function skip(s) { seekTo(dom.audioElement.currentTime + s); }
+function goStart() { seekTo(0); }
+
+function setPlaybackRate(rate) {
+  state.settings.playbackRate = Number(rate);
+  dom.audioElement.playbackRate = Number(rate);
+  saveState(false); render();
+}
+
+function hasRecordedProjectTitle() {
+  const title = String(state.project && state.project.title ? state.project.title : "").trim();
+  return Boolean(title && title !== "Untitled Project");
+}
+
+function downloadsHasCuePathProject() {
+  return Boolean(downloadsSummary && Array.isArray(downloadsSummary.files) && downloadsSummary.files.some(file => isCuePathFileName(file.name)));
+}
+
+function projectHasWork() {
+  return Boolean(hasLoadedAudioBody || state.media.fileName || state.markers.length || state.regions.length || hasRecordedProjectTitle());
+}
+
+function needsCuePathProjectFileSave() {
+  return projectHasWork() && !hasProjectFileReference;
+}
+
+async function confirmBeforeReplacingAudio() {
+  if (!needsCuePathProjectFileSave()) return true;
+  const shouldSave = window.confirm("目前專案尚未儲存為 CuePath 檔案。要先儲存再載入其他音檔嗎？\nCurrent project has no CuePath file yet. Save before loading another audio?");
+  if (!shouldSave) return false;
+  return await saveCuePathProjectFile();
+}
+
+async function checkProjectFileAfterAudioLoad() {
+  if (hasProjectFileReference || projectFileSavePrompted) return;
+  if (downloadsHasCuePathProject()) {
+    hasProjectFileReference = true;
+    return;
+  }
+  if (downloadsDirectoryHandle) {
+    const ok = await verifyDownloadsPermission(downloadsDirectoryHandle, false);
+    if (ok) {
+      downloadsSummary = await scanDownloadsFolder(downloadsDirectoryHandle);
+      renderDownloadsStatus();
+      if (downloadsHasCuePathProject()) {
+        hasProjectFileReference = true;
+        return;
+      }
+    }
+  }
+  projectFileSavePrompted = true;
+  const shouldSave = window.confirm("此資料夾尚未找到 CuePath 專案檔。要現在儲存專案檔嗎？\nNo CuePath project file was found. Save one now?");
+  if (shouldSave) await saveCuePathProjectFile();
+}
+
+async function handleAudioFile(file, options) {
+  if (!file) return;
+  const opts = options || {};
+  if (!opts.skipReplaceGuard && hasLoadedAudioBody) {
+    const canReplace = await confirmBeforeReplacingAudio();
+    if (!canReplace) {
+      setMessage("已取消載入其他音檔", false);
+      return;
+    }
+  }
+  if (!opts.skipProjectTitlePrompt && !hasRecordedProjectTitle()) {
+    const defaultProjectTitle = filenameToProjectTitle(file.name);
+    const inputTitle = window.prompt("請輸入專案名稱 / Project title", defaultProjectTitle);
+    state.project.title = (inputTitle === null ? defaultProjectTitle : inputTitle.trim()) || defaultProjectTitle;
+  }
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+  currentObjectUrl = URL.createObjectURL(file);
+  hasLoadedAudioBody = true;
+  waveformPeaks = null;
+  waveformStatus = "";
+  dom.audioElement.src = currentObjectUrl;
+  dom.audioElement.load();
+  state.media.type = "audio"; state.media.source = "local";
+  state.media.fileName = file.name; state.media.duration = null;
+  saveState(false); render();
+  buildWaveformPeaks(file);
+  checkProjectFileAfterAudioLoad().catch(() => {});
+}
+
+async function handleDroppedFiles(files) {
+  const arr = Array.from(files || []);
+  if (!arr.length) return;
+  const audio = arr.find(isAudioFile);
+  const cp = arr.find(isCuePathFile);
+  if (audio && cp) { importJsonFile(cp, () => handleAudioFile(audio, { skipProjectTitlePrompt: true, skipReplaceGuard: true })); return; }
+  if (audio) { await handleAudioFile(audio); return; }
+  if (cp) { importJsonFile(cp); return; }
+  setMessage("不支援的格式。請拖曳音檔或 .cuepath 檔案。", true);
+}
+
+function openDownloadsDb() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error("IndexedDB unavailable")); return; }
+    const request = indexedDB.open(DOWNLOADS_DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(DOWNLOADS_STORE_NAME);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveDownloadsHandle(handle) {
+  const db = await openDownloadsDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DOWNLOADS_STORE_NAME, "readwrite");
+    tx.objectStore(DOWNLOADS_STORE_NAME).put(handle, DOWNLOADS_HANDLE_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+async function loadDownloadsHandle() {
+  const db = await openDownloadsDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DOWNLOADS_STORE_NAME, "readonly");
+    const request = tx.objectStore(DOWNLOADS_STORE_NAME).get(DOWNLOADS_HANDLE_KEY);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = () => db.close();
+  });
+}
+
+async function verifyDownloadsPermission(handle, requestPermission) {
+  if (!handle || !handle.queryPermission) return false;
+  const opts = { mode: "read" };
+  if (await handle.queryPermission(opts) === "granted") return true;
+  if (requestPermission && handle.requestPermission) {
+    return await handle.requestPermission(opts) === "granted";
+  }
+  return false;
+}
+
+async function scanDownloadsFolder(handle) {
+  const summary = { count: 0, totalBytes: 0, files: [] };
+  for await (const entry of handle.values()) {
+    if (entry.kind !== "file") continue;
+    const file = await entry.getFile();
+    summary.count += 1;
+    summary.totalBytes += file.size;
+    summary.files.push({ name: file.name, size: file.size, type: file.type || "" });
+  }
+  summary.files.sort((a, b) => a.name.localeCompare(b.name));
+  return summary;
+}
+
+function renderDownloadsStatus() {
+  if (!dom.downloadsStatusText) return;
+  if (!("showDirectoryPicker" in window)) {
+    dom.downloadsStatusText.textContent = getDownloadsApiStatusText() + "；可用 Load Audio 載入 downloads 檔案";
+    return;
+  }
+  if (!downloadsDirectoryHandle) {
+    dom.downloadsStatusText.textContent = getDownloadsApiStatusText() + "；可按 Set 選 downloads";
+    return;
+  }
+  if (!downloadsSummary) {
+    dom.downloadsStatusText.textContent = "downloads selected. Click Refresh.";
+    return;
+  }
+  dom.downloadsStatusText.textContent = "downloads: " + downloadsSummary.count + " files / " + formatBytes(downloadsSummary.totalBytes);
+}
+
+async function refreshDownloadsStatus(options) {
+  const opts = options || {};
+  if (!downloadsDirectoryHandle) {
+    renderDownloadsStatus();
+    return;
+  }
+  const ok = await verifyDownloadsPermission(downloadsDirectoryHandle, Boolean(opts.requestPermission));
+  if (!ok) {
+    dom.downloadsStatusText.textContent = "downloads permission needed";
+    return;
+  }
+  downloadsSummary = await scanDownloadsFolder(downloadsDirectoryHandle);
+  renderDownloadsStatus();
+  if (opts.tryReloadAudio) await tryReloadAudioFromDownloads();
+}
+
+async function setDownloadsFolder() {
+  if (!("showDirectoryPicker" in window)) {
+    setMessage("目前瀏覽器未開放 Folder API；請用 Load Audio 載入 downloads 檔案", true);
+    renderDownloadsStatus();
+    return;
+  }
+  downloadsDirectoryHandle = await window.showDirectoryPicker({ mode: "read" });
+  await saveDownloadsHandle(downloadsDirectoryHandle);
+  await refreshDownloadsStatus({ requestPermission: true, tryReloadAudio: true });
+  setMessage("downloads folder 已設定", false);
+}
+
+async function initDownloadsFolder() {
+  try {
+    downloadsDirectoryHandle = await loadDownloadsHandle();
+    await refreshDownloadsStatus({ requestPermission: false, tryReloadAudio: true });
+  } catch (error) {
+    renderDownloadsStatus();
+  }
+}
+
+async function tryReloadAudioFromDownloads() {
+  if (!downloadsDirectoryHandle || hasLoadedAudioBody || !state.media.fileName) return;
+  const ok = await verifyDownloadsPermission(downloadsDirectoryHandle, false);
+  if (!ok) return;
+  try {
+    const fileHandle = await downloadsDirectoryHandle.getFileHandle(state.media.fileName);
+    const file = await fileHandle.getFile();
+    handleAudioFile(file, { skipReplaceGuard: true });
+    setMessage("已從 downloads 重新載入：" + file.name, false);
+  } catch (error) {
+    setMessage("downloads 找不到對應音檔：" + state.media.fileName, false);
+  }
+}
+
+function setLoopA() { state.settings.loop.a = dom.audioElement.currentTime || 0; saveState(false); render(); }
+function setLoopB() { state.settings.loop.b = dom.audioElement.currentTime || 0; saveState(false); render(); }
+
+function canUseLoop(showError) {
+  const loop = state.settings.loop;
+  if (loop.a === null || loop.b === null) { if (showError) setMessage("請先設定 A 和 B 點", true); return false; }
+  if (loop.a >= loop.b) { if (showError) setMessage("A 點必須在 B 點之前", true); return false; }
+  return true;
+}
+
+function toggleLoop() {
+  if (state.settings.loop.enabled) { state.settings.loop.enabled = false; }
+  else if (canUseLoop(true)) { state.settings.loop.enabled = true; }
+  saveState(false); render();
+}
+
+function clearLoop() {
+  state.settings.loop.enabled = false; state.settings.loop.a = null; state.settings.loop.b = null;
+  saveState(false); render();
+}
+
+function enforceLoop() {
+  const loop = state.settings.loop;
+  if (loop.enabled && loop.a !== null && loop.b !== null && dom.audioElement.currentTime >= loop.b) {
+    dom.audioElement.currentTime = loop.a;
+    if (!dom.audioElement.paused) dom.audioElement.play().catch(() => {});
+  }
+}
+
+function addMarker() {
+  const now = new Date().toISOString();
+  state.markers.push({
+    id: generateId("marker"), time: dom.audioElement.currentTime || 0,
+    label: "Marker " + (state.markers.length + 1), note: "", tags: [], status: "todo",
+    createdAt: now, updatedAt: now
+  });
+  sortMarkers(); saveState(false); renderTimeline(); renderMarkers();
+}
+
+function updateMarker(id, field, value) {
+  const m = state.markers.find(x => x.id === id);
+  if (!m) return;
+  if (field === "tags") m.tags = parseTags(value);
+  else if (field === "status") m.status = normalizeStatus(value);
+  else if (field === "label" || field === "note") m[field] = value;
+  m.updatedAt = new Date().toISOString();
+  saveState(false); renderTimeline(); renderMarkers();
+}
+
+function deleteMarker(id) { state.markers = state.markers.filter(x => x.id !== id); saveState(false); renderTimeline(); renderMarkers(); }
+function jumpToMarker(id) { const m = state.markers.find(x => x.id === id); if (m) seekTo(m.time, { disableLoop: true }); }
+
+function moveMarkerToTime(id, time) {
+  const m = state.markers.find(x => x.id === id);
+  if (!m || !Number.isFinite(time)) return;
+  m.time = Math.max(0, time); m.updatedAt = new Date().toISOString();
+  sortMarkers(); saveState(false); renderTimeline(); renderMarkers();
+}
+
+function addRegionFromLoop() {
+  if (!canUseLoop(true)) return;
+  const now = new Date().toISOString();
+  state.regions.push({
+    id: generateId("region"), start: state.settings.loop.a, end: state.settings.loop.b,
+    label: "Region " + (state.regions.length + 1), note: "", tags: [], status: "todo",
+    createdAt: now, updatedAt: now
+  });
+  sortRegions(); saveState(false); renderTimeline(); renderRegions();
+}
+
+function updateRegion(id, field, value) {
+  const r = state.regions.find(x => x.id === id);
+  if (!r) return;
+  if (field === "tags") r.tags = parseTags(value);
+  else if (field === "status") r.status = normalizeStatus(value);
+  else if (field === "label" || field === "note") r[field] = value;
+  r.updatedAt = new Date().toISOString();
+  saveState(false); renderTimeline(); renderRegions();
+}
+
+function deleteRegion(id) { state.regions = state.regions.filter(x => x.id !== id); saveState(false); renderTimeline(); renderRegions(); }
+function jumpToRegion(id) { const r = state.regions.find(x => x.id === id); if (r) seekTo(r.start, { disableLoop: true }); }
+
+function loopRegion(id) {
+  const r = state.regions.find(x => x.id === id);
+  if (!r || r.start >= r.end) { setMessage("無效的區段範圍", true); return; }
+  state.settings.loop.a = r.start; state.settings.loop.b = r.end; state.settings.loop.enabled = true;
+  seekTo(r.start); saveState(false); renderLoop(); renderTimeline();
+  setMessage("已啟用循環：" + r.label, false);
+}
+
+function startMarkerDrag(event, markerId, dragPart) {
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  event.preventDefault(); event.stopPropagation();
+  markerDrag = {
+    markerId, dragPart,
+    startX: event.clientX, moved: false,
+    markerElement: event.currentTarget.closest(".timeline-marker")
+  };
+}
+
+function continueMarkerDrag(event) {
+  if (!markerDrag) return;
+  event.preventDefault();
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  if (Math.abs(event.clientX - markerDrag.startX) > 2) markerDrag.moved = true;
+  const m = state.markers.find(x => x.id === markerDrag.markerId);
+  const duration = getTimelineDuration();
+  if (!m || !duration) return;
+  m.time = Math.max(0, time); m.updatedAt = new Date().toISOString();
+  if (markerDrag.markerElement) {
+    markerDrag.markerElement.style.left = clamp(m.time / duration, 0, 1) * 100 + "%";
+  }
+  updateTimelinePlayhead();
+}
+
+function endMarkerDrag() {
+  if (markerDrag) {
+    suppressNextMarkerClick = markerDrag.moved;
+    if (markerDrag.moved) { sortMarkers(); saveState(false); renderTimeline(); renderMarkers(); }
+  }
+  markerDrag = null;
+}
+
+function startPlayheadDrag(event) {
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  event.preventDefault();
+  event.stopPropagation();
+  playheadDrag = true;
+  seekTo(time, { disableLoop: true });
+}
+
+function continuePlayheadDrag(event) {
+  if (!playheadDrag) return;
+  event.preventDefault();
+  const time = getTimelinePointerTime(event);
+  if (time !== null) seekTo(time, { disableLoop: true });
+}
+
+function endPlayheadDrag() {
+  playheadDrag = null;
+}
+
+async function saveCuePathProjectFile() {
+  updateTimestamp();
+  const filename = sanitizeFilename(state.project.title) + ".cuepath";
+  const content = JSON.stringify(state, null, 2);
+  const mimeType = "application/json;charset=utf-8";
+  if ("showSaveFilePicker" in window) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: "CuePath Project",
+          accept: { "application/json": [".cuepath", ".json"] }
+        }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(new Blob([content], { type: mimeType }));
+      await writable.close();
+      hasProjectFileReference = true;
+      saveState(false);
+      setMessage("CuePath 專案檔已儲存", false);
+      return true;
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        setMessage("已取消儲存 CuePath 專案檔", false);
+        return false;
+      }
+    }
+  }
+  downloadFile(filename, content, mimeType);
+  hasProjectFileReference = true;
+  saveState(false);
+  setMessage("CuePath 專案檔已下載", false);
+  return true;
+}
+
+function exportJson() {
+  saveCuePathProjectFile();
+}
+
+function importJsonFile(file, afterImport) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    try {
+      const parsed = JSON.parse(String(reader.result || ""));
+      if (!validateCuePathJson(parsed)) throw new Error("Invalid schema");
+      state = normalizeImportedState(parsed); sortMarkers(); sortRegions();
+      hasProjectFileReference = true;
+      projectFileSavePrompted = false;
+      hasLoadedAudioBody = false;
+      waveformBuildId += 1;
+      waveformPeaks = null;
+      waveformStatus = "";
+      if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+      dom.audioElement.removeAttribute("src"); dom.audioElement.load();
+      saveState(false); render(); setMessage("JSON 已匯入", false);
+      if (state.media.fileName) setMessage("請重新載入對應音檔：" + state.media.fileName, false);
+      if (typeof afterImport === "function") afterImport();
+    } catch(e) { setMessage("無效的 CuePath JSON 檔案", true); }
+  };
+  reader.onerror = function() { setMessage("無效的 CuePath JSON 檔案", true); };
+  reader.readAsText(file);
+}
+
+function exportCsv() {
+  updateTimestamp();
+  const rows = [["type","time","start","end","label","note","tags","status"]];
+  state.markers.forEach(m => rows.push(["marker", secondsToTimecode(m.time), "", "", m.label, m.note, m.tags.join(", "), m.status]));
+  state.regions.forEach(r => rows.push(["region", "", secondsToTimecode(r.start), secondsToTimecode(r.end), r.label, r.note, r.tags.join(", "), r.status]));
+  const csv = "\uFEFF" + rows.map(row => row.map(escapeCsvValue).join(",")).join("\r\n");
+  downloadFile(sanitizeFilename(state.project.title) + ".csv", csv, "text/csv;charset=utf-8");
+  saveState(false); setMessage("CSV 已匯出", false);
+}
+
+function exportMarkdown() {
+  updateTimestamp();
+  const lines = [];
+  lines.push("# " + (state.project.title.trim() || "Untitled Project"), "");
+  lines.push("Media: " + (state.media.fileName || "No audio loaded"), "");
+  lines.push("## Markers", "", "| Time | Label | Tags | Status | Note |", "|---|---|---|---|---|");
+  state.markers.forEach(m => lines.push("| " + [secondsToTimecode(m.time), m.label, m.tags.join(", "), m.status, m.note].map(escapeMarkdownCell).join(" | ") + " |"));
+  lines.push("", "## Regions", "", "| Start | End | Label | Tags | Status | Note |", "|---|---|---|---|---|---|");
+  state.regions.forEach(r => lines.push("| " + [secondsToTimecode(r.start), secondsToTimecode(r.end), r.label, r.tags.join(", "), r.status, r.note].map(escapeMarkdownCell).join(" | ") + " |"));
+  downloadFile(sanitizeFilename(state.project.title) + ".md", lines.join("\n"), "text/markdown;charset=utf-8");
+  saveState(false); setMessage("Markdown 已匯出", false);
+}
+
+function clearProject() {
+  if (!confirm("確定要清除此專案嗎？")) return;
+  state = createInitialState(); hasLoadedAudioBody = false;
+  hasProjectFileReference = false;
+  projectFileSavePrompted = false;
+  waveformBuildId += 1;
+  waveformPeaks = null;
+  waveformStatus = "";
+  if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+  dom.audioElement.removeAttribute("src"); dom.audioElement.load();
+  localStorage.removeItem(STORAGE_KEY); render(); setMessage("專案已清除", false);
+}
+
+function render() {
+  dom.projectTitleInput.value = state.project.title;
+  dom.audioElement.playbackRate = state.settings.playbackRate;
+  renderMediaInfo(); renderTimeDisplays(); renderLoop();
+  renderPlaybackRateButtons(); renderTimeline(); renderMarkers(); renderRegions(); renderPlayButton(); renderDownloadsStatus();
+}
+
+function renderMediaInfo() {
+  document.body.classList.toggle("audio-loaded", hasLoadedAudioBody);
+  dom.fileNameText.textContent = state.media.fileName || "尚未載入";
+  dom.durationText.textContent = secondsToTimecode(state.media.duration);
+  if (!hasLoadedAudioBody && state.media.fileName) setMessage("請重新載入對應音檔：" + state.media.fileName, false);
+  else if (!hasLoadedAudioBody) setMessage("尚未載入音檔", false);
+}
+
+function renderTimeDisplays() {
+  dom.currentTimeText.textContent = secondsToTimecode(dom.audioElement.currentTime || 0);
+  const dur = Number.isFinite(dom.audioElement.duration) ? dom.audioElement.duration : state.media.duration;
+  dom.durationText.textContent = secondsToTimecode(dur);
+  updateTimelinePlayhead();
+}
+
+function renderPlayButton() {
+  dom.playPauseButton.textContent = dom.audioElement.paused ? "播放 Play" : "暫停 Pause";
+}
+
+function renderPlaybackRateButtons() {
+  if (!dom.playbackRateButtons || dom.playbackRateButtons.children.length > 0) {
+    Array.from(dom.playbackRateButtons ? dom.playbackRateButtons.children : []).forEach(btn => {
+      btn.classList.toggle("active", Number(btn.dataset.rate) === state.settings.playbackRate);
+    });
+    return;
+  }
+  PLAYBACK_RATES.forEach(rate => {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "rate-button";
+    btn.dataset.rate = String(rate); btn.textContent = rate + "x";
+    btn.addEventListener("click", () => setPlaybackRate(rate));
+    dom.playbackRateButtons.appendChild(btn);
+  });
+  renderPlaybackRateButtons();
+}
+
+function renderLoop() {
+  const loop = state.settings.loop;
+  dom.loopAText.textContent = loop.a === null ? "--:--.-" : secondsToTimecode(loop.a);
+  dom.loopBText.textContent = loop.b === null ? "--:--.-" : secondsToTimecode(loop.b);
+  dom.toggleLoopButton.textContent = loop.enabled ? "循環開 Loop On" : "循環關 Loop Off";
+  dom.toggleLoopButton.classList.toggle("loop-on", loop.enabled);
+  dom.currentTimeText.classList.toggle("loop-active", loop.enabled);
+  dom.durationText.classList.toggle("loop-active", loop.enabled);
+  if (dom.loopAbPill) dom.loopAbPill.classList.toggle("loop-active", loop.enabled);
+  if (dom.cueTimeline) {
+    dom.cueTimeline.classList.toggle("loop-active", loop.enabled);
+    const canvas = dom.cueTimeline.querySelector(".timeline-waveform");
+    if (canvas) requestAnimationFrame(() => drawWaveform(canvas));
+  }
+}
+
+function updateTimelinePlayhead() {
+  const playhead = dom.cueTimeline.querySelector(".timeline-playhead");
+  const duration = getTimelineDuration();
+  if (!playhead || !duration) return;
+  playhead.style.left = clamp((dom.audioElement.currentTime || 0) / duration, 0, 1) * 100 + "%";
+}
+
+function renderTimeline() {
+  const duration = getTimelineDuration();
+  dom.cueTimeline.replaceChildren();
+  dom.cueTimeline.classList.toggle("loop-active", state.settings.loop.enabled);
+  dom.cueTimeline.onpointerdown = function(event) {
+    if (isInteractiveTimelineTarget(event.target)) return;
+    const time = getTimelinePointerTime(event);
+    if (time !== null) seekTo(time, { disableLoop: true });
+  };
+
+  const ruler = document.createElement("div");
+  ruler.className = "timeline-ruler";
+  for (let i = 0; i <= 10; i++) {
+    const pct = (i / 10) * 100;
+    const tick = document.createElement("div");
+    tick.className = "timeline-tick"; tick.style.left = pct + "%";
+    ruler.appendChild(tick);
+    if (duration) {
+      const label = document.createElement("div");
+      label.className = "timeline-tick-label"; label.style.left = pct + "%";
+      const parts = secondsToTimecode(duration * i / 10).split(".");
+      const main = document.createElement("span"); main.className = "tick-main"; main.textContent = parts[0];
+      const ms = document.createElement("span"); ms.className = "tick-ms"; ms.textContent = "." + parts[1];
+      label.append(main, ms); ruler.appendChild(label);
+    }
+  }
+
+  const loopTrack = document.createElement("div");
+  loopTrack.className = "timeline-loop-track";
+
+  const body = document.createElement("div"); body.className = "timeline-body";
+  const waveformCanvas = document.createElement("canvas");
+  waveformCanvas.className = "timeline-waveform";
+  waveformCanvas.setAttribute("aria-hidden", "true");
+  const regionTrack = document.createElement("div"); regionTrack.className = "timeline-track regions-track";
+  const markerTrack = document.createElement("div"); markerTrack.className = "timeline-track markers-track";
+  const playhead = document.createElement("div"); playhead.className = "timeline-playhead";
+  playhead.addEventListener("pointerdown", startPlayheadDrag);
+  body.append(waveformCanvas, regionTrack, markerTrack, playhead);
+
+  if (!duration) {
+    const empty = document.createElement("div"); empty.className = "timeline-empty";
+    empty.textContent = "載入音檔後可在時間軸上設置 Marker 與 Region";
+    body.appendChild(empty); dom.cueTimeline.append(ruler, loopTrack, body); updateTimelinePlayhead(); return;
+  }
+
+  if (waveformStatus) {
+    const status = document.createElement("div");
+    status.className = "timeline-waveform-status";
+    status.textContent = waveformStatus;
+    body.appendChild(status);
+  }
+
+  [["A", state.settings.loop.a], ["B", state.settings.loop.b]].forEach(point => {
+    const label = point[0];
+    const time = point[1];
+    if (!Number.isFinite(time)) return;
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "timeline-loop-point";
+    el.style.left = clamp(time / duration, 0, 1) * 100 + "%";
+    el.title = "Loop " + label + " " + secondsToTimecode(time);
+    el.innerHTML = '<span class="loop-point-label">' + label + '</span><span class="loop-point-arrow">▼</span>';
+    el.addEventListener("click", ev => {
+      ev.stopPropagation();
+      seekTo(time, { disableLoop: true });
+    });
+    loopTrack.appendChild(el);
+  });
+
+  sortRegions();
+  state.regions.forEach(region => {
+    const s = clamp(region.start / duration, 0, 1) * 100;
+    const e = clamp(region.end / duration, 0, 1) * 100;
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "timeline-region status-" + normalizeStatus(region.status);
+    el.style.left = s + "%"; el.style.width = Math.max(0.5, e - s) + "%";
+    el.textContent = region.label || secondsToTimecode(region.start);
+    el.title = secondsToTimecode(region.start) + " – " + secondsToTimecode(region.end);
+    el.addEventListener("click", ev => { ev.stopPropagation(); loopRegion(region.id); });
+    regionTrack.appendChild(el);
+  });
+
+  sortMarkers();
+  const usedLanes = [];
+  state.markers.forEach(marker => {
+    const leftPct = clamp(marker.time / duration, 0, 1) * 100;
+    let lane = 0;
+    for (let i = 0; i < usedLanes.length; i++) {
+      if (Math.abs(leftPct - usedLanes[i]) >= 8) { lane = i; break; }
+      lane = i + 1;
+    }
+    usedLanes[lane] = leftPct;
+    const el = document.createElement("div");
+    el.className = "timeline-marker status-" + normalizeStatus(marker.status) + (lane > 0 ? " lane-" + lane : "");
+    el.style.left = leftPct + "%";
+    el.title = secondsToTimecode(marker.time) + " — " + (marker.label || "Marker");
+    const lh = document.createElement("div"); lh.className = "timeline-marker-handle left";
+    lh.addEventListener("pointerdown", ev => startMarkerDrag(ev, marker.id, "left"));
+    const txt = document.createElement("span"); txt.className = "timeline-marker-text";
+    txt.textContent = marker.label || secondsToTimecode(marker.time);
+    const rh = document.createElement("div"); rh.className = "timeline-marker-handle right";
+    rh.addEventListener("pointerdown", ev => startMarkerDrag(ev, marker.id, "right"));
+    el.append(lh, txt, rh);
+    el.addEventListener("pointerdown", ev => { if (ev.target === lh || ev.target === rh) return; startMarkerDrag(ev, marker.id, "center"); });
+    el.addEventListener("click", ev => {
+      ev.stopPropagation();
+      if (suppressNextMarkerClick) { suppressNextMarkerClick = false; return; }
+      jumpToMarker(marker.id);
+    });
+    markerTrack.appendChild(el);
+  });
+
+  dom.cueTimeline.append(ruler, loopTrack, body);
+  requestAnimationFrame(() => drawWaveform(waveformCanvas));
+  updateTimelinePlayhead();
+}
+
+function renderStatusOptions(cur) {
+  return STATUS_OPTIONS.map(s => `<option value="${s}"${s === cur ? " selected" : ""}>${s}</option>`).join("");
+}
+
+function escapeHtml(text) {
+  return String(text || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function renderMarkers() {
+  const c = dom.markersContainer;
+  if (!state.markers.length) {
+    c.innerHTML = '<div class="empty">尚無 Marker / No markers. Press 「＋ 新增 Marker / Add」 to create one at the current time.</div>'; return;
+  }
+  const table = document.createElement("table"); table.className = "markers-table";
+  const thead = document.createElement("thead");
+  thead.innerHTML = "<tr><th>時間</th><th>標籤</th><th>備註</th><th>標記</th><th>狀態</th><th>操作</th></tr>";
+  const tbody = document.createElement("tbody");
+  state.markers.forEach(marker => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td class="time-cell">' + secondsToTimecode(marker.time) + '</td>' +
+      '<td><input type="text" value="' + escapeHtml(marker.label) + '" data-id="' + marker.id + '" data-field="label"></td>' +
+      '<td><textarea data-id="' + marker.id + '" data-field="note">' + escapeHtml(marker.note) + '</textarea></td>' +
+      '<td><input type="text" value="' + escapeHtml(tagsToInput(marker.tags)) + '" data-id="' + marker.id + '" data-field="tags" placeholder="tag1, tag2"></td>' +
+      '<td class="small-cell"><select data-id="' + marker.id + '" data-field="status">' + renderStatusOptions(marker.status) + '</select></td>' +
+      '<td class="actions-cell"><div class="row-actions">' +
+        '<button type="button" class="btn-row" data-action="jump" data-id="' + marker.id + '">跳至 Jump</button>' +
+        '<button type="button" class="btn-row btn-danger" data-action="delete" data-id="' + marker.id + '">刪除 Delete</button>' +
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+  table.append(thead, tbody); c.replaceChildren(table);
+  c.querySelectorAll("input, select, textarea").forEach(el => el.addEventListener("change", () => updateMarker(el.dataset.id, el.dataset.field, el.value)));
+  c.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => {
+    if (btn.dataset.action === "jump") jumpToMarker(btn.dataset.id);
+    else if (btn.dataset.action === "delete") deleteMarker(btn.dataset.id);
+  }));
+}
+
+function renderRegions() {
+  const c = dom.regionsContainer;
+  if (!state.regions.length) {
+    c.innerHTML = '<div class="empty">尚無 Region。設定 A-B Loop 後按下「＋區段」建立。</div>'; return;
+  }
+  const table = document.createElement("table"); table.className = "regions-table";
+  const thead = document.createElement("thead");
+  thead.innerHTML = "<tr><th>起始</th><th>結束</th><th>長度</th><th>標籤</th><th>備註</th><th>標記</th><th>狀態</th><th>操作</th></tr>";
+  const tbody = document.createElement("tbody");
+  state.regions.forEach(region => {
+    const dur = region.end - region.start;
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td class="time-cell">' + secondsToTimecode(region.start) + '</td>' +
+      '<td class="time-cell">' + secondsToTimecode(region.end) + '</td>' +
+      '<td class="time-cell">' + secondsToTimecode(dur) + '</td>' +
+      '<td><input type="text" value="' + escapeHtml(region.label) + '" data-id="' + region.id + '" data-field="label"></td>' +
+      '<td><textarea data-id="' + region.id + '" data-field="note">' + escapeHtml(region.note) + '</textarea></td>' +
+      '<td><input type="text" value="' + escapeHtml(tagsToInput(region.tags)) + '" data-id="' + region.id + '" data-field="tags" placeholder="tag1, tag2"></td>' +
+      '<td class="small-cell"><select data-id="' + region.id + '" data-field="status">' + renderStatusOptions(region.status) + '</select></td>' +
+      '<td class="actions-cell"><div class="row-actions">' +
+        '<button type="button" class="btn-row" data-action="jump" data-id="' + region.id + '">跳至 Jump</button>' +
+        '<button type="button" class="btn-row" data-action="loop" data-id="' + region.id + '">Loop</button>' +
+        '<button type="button" class="btn-row btn-danger" data-action="delete" data-id="' + region.id + '">刪除 Delete</button>' +
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+  table.append(thead, tbody); c.replaceChildren(table);
+  c.querySelectorAll("input, select, textarea").forEach(el => el.addEventListener("change", () => updateRegion(el.dataset.id, el.dataset.field, el.value)));
+  c.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => {
+    if (btn.dataset.action === "jump") jumpToRegion(btn.dataset.id);
+    else if (btn.dataset.action === "loop") loopRegion(btn.dataset.id);
+    else if (btn.dataset.action === "delete") deleteRegion(btn.dataset.id);
+  }));
+}
+
+function handleShortcut(event) {
+  const target = event.target;
+  const isTyping = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
+  if (isTyping && target.id !== "projectTitleInput") return;
+  const key = event.key;
+  if (key === " ")           { event.preventDefault(); togglePlay(); }
+  else if (key === "ArrowLeft")  { event.preventDefault(); skip(event.shiftKey ? -state.settings.skipLarge : event.altKey ? -1 : -state.settings.skipSmall); }
+  else if (key === "ArrowRight") { event.preventDefault(); skip(event.shiftKey ?  state.settings.skipLarge : event.altKey ?  1 :  state.settings.skipSmall); }
+  else if (key === "Home")   { event.preventDefault(); goStart(); }
+  else if (key === "a" || key === "A") { event.preventDefault(); setLoopA(); }
+  else if (key === "b" || key === "B") { event.preventDefault(); setLoopB(); }
+  else if (key === "l" || key === "L") { event.preventDefault(); toggleLoop(); }
+  else if (key === "m" || key === "M") { event.preventDefault(); addMarker(); }
+}
+
+function bindEventListeners() {
+  dom.loadAudioButton.addEventListener("click", () => dom.audioFileInput.click());
+  dom.audioFileInput.addEventListener("change", async function() {
+    if (this.files && this.files[0]) { await handleAudioFile(this.files[0]); this.value = ""; }
+  });
+  dom.importJsonButton.addEventListener("click", () => dom.jsonFileInput.click());
+  dom.jsonFileInput.addEventListener("change", function() {
+    if (this.files && this.files[0]) { importJsonFile(this.files[0]); this.value = ""; }
+  });
+  dom.exportJsonButton.addEventListener("click", exportJson);
+  dom.exportCsvButton.addEventListener("click", exportCsv);
+  dom.exportMarkdownButton.addEventListener("click", exportMarkdown);
+  dom.clearProjectButton.addEventListener("click", clearProject);
+  dom.setDownloadsFolderButton.addEventListener("click", () => setDownloadsFolder().catch(() => setMessage("downloads folder 設定失敗", true)));
+  dom.refreshDownloadsButton.addEventListener("click", () => refreshDownloadsStatus({ requestPermission: true, tryReloadAudio: true }).catch(() => setMessage("downloads refresh failed", true)));
+  dom.projectTitleInput.addEventListener("change", function() {
+    state.project.title = this.value.trim() || "Untitled Project"; saveState(false);
+  });
+  dom.skipLargeBackButton.addEventListener("click",    () => skip(-state.settings.skipLarge));
+  dom.skipFiveBackButton.addEventListener("click",     () => skip(-5));
+  dom.skipSmallBackButton.addEventListener("click",    () => skip(-state.settings.skipSmall));
+  dom.skipOneBackButton.addEventListener("click",      () => skip(-1));
+  dom.playPauseButton.addEventListener("click", togglePlay);
+  dom.skipOneForwardButton.addEventListener("click",   () => skip(1));
+  dom.skipSmallForwardButton.addEventListener("click", () => skip(state.settings.skipSmall));
+  dom.skipFiveForwardButton.addEventListener("click",  () => skip(5));
+  dom.skipLargeForwardButton.addEventListener("click", () => skip(state.settings.skipLarge));
+  dom.goStartButton.addEventListener("click", goStart);
+  dom.setAButton.addEventListener("click", setLoopA);
+  dom.setBButton.addEventListener("click", setLoopB);
+  dom.toggleLoopButton.addEventListener("click", toggleLoop);
+  dom.clearLoopButton.addEventListener("click", clearLoop);
+  dom.addRegionFromLoopButton.addEventListener("click", addRegionFromLoop);
+  dom.addMarkerButton.addEventListener("click", addMarker);
+  dom.addRegionButton.addEventListener("click", addRegionFromLoop);
+  dom.audioElement.addEventListener("loadedmetadata", function() {
+    state.media.duration = Number.isFinite(this.duration) ? this.duration : null;
+    this.playbackRate = state.settings.playbackRate;
+    saveState(false); render(); setMessage("音檔已載入：" + state.media.fileName, false);
+  });
+  dom.audioElement.addEventListener("timeupdate", function() { enforceLoop(); renderTimeDisplays(); });
+  dom.audioElement.addEventListener("play", renderPlayButton);
+  dom.audioElement.addEventListener("pause", renderPlayButton);
+  document.addEventListener("keydown", handleShortcut);
+  document.addEventListener("pointermove", continueMarkerDrag);
+  document.addEventListener("pointermove", continuePlayheadDrag);
+  document.addEventListener("pointerup", endMarkerDrag);
+  document.addEventListener("pointerup", endPlayheadDrag);
+  document.addEventListener("pointercancel", endMarkerDrag);
+  document.addEventListener("pointercancel", endPlayheadDrag);
+  document.addEventListener("dragenter", ev => { ev.preventDefault(); document.body.classList.add("drag-over"); });
+  document.addEventListener("dragover",  ev => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = "copy"; document.body.classList.add("drag-over"); });
+  document.addEventListener("dragleave", ev => { if (!ev.relatedTarget) document.body.classList.remove("drag-over"); });
+  document.addEventListener("drop", ev => {
+    ev.preventDefault(); document.body.classList.remove("drag-over");
+    handleDroppedFiles(ev.dataTransfer ? ev.dataTransfer.files : []);
+  });
+  window.addEventListener("resize", renderTimeline);
+  window.addEventListener("beforeunload", ev => {
+    if (!needsCuePathProjectFileSave()) return;
+    ev.preventDefault();
+    ev.returnValue = "";
+  });
+}
+
+function init() {
+  loadStateFromStorage();
+  bindEventListeners();
+  render();
+  initDownloadsFolder();
+}
+init();
+</script>
+</body>
+</html>

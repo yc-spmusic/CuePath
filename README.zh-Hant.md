@@ -2,6 +2,9 @@
 
 [English Version](./README.md)
 
+![CuePath 介面](./assets/cuepath-screenshot.png)
+
+
 CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放器。
 
 > **BETA 測試說明：**

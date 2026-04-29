@@ -1,6 +1,7 @@
 # CuePath — v0.1.4-BETA
-
 [繁體中文版](./README.zh-Hant.md)
+
+![CuePath Interface](./assets/cuepath-screenshot.png)
 
 CuePath is a lightweight player designed specifically for music transcription and audio reference marking.
 

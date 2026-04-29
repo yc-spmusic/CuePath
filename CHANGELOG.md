@@ -2,6 +2,17 @@
 
 所有對 CuePath 的重要更新都會記錄在此檔案中。 / All notable changes to CuePath will be documented in this file.
 
+## [0.1.3-BETA] - 2026-04-29
+
+### 新增功能 / New Features
+- **Ctrl+S 快速鍵 / Ctrl+S Shortcut**: 現在可以使用 `Ctrl+S` (或 `Cmd+S`) 快速匯出專案檔。 / Added `Ctrl+S` (or `Cmd+S`) shortcut to quickly export the project file.
+- **未儲存狀態提醒 / Unsaved Changes Indicator**: 當專案內容有變動但尚未匯出時，瀏覽器分頁標題會顯示 `*` 號，且資訊欄會顯示「檔案未儲存」。 / Added an asterisk `*` to the browser title and an "Unsaved" status in the info bar when there are unsaved changes.
+
+### 優化與調整 / Improvements
+- **狀態同步 / Status Syncing**: 匯出或匯入檔案後，會自動清除未儲存狀態。 / Automatically clears the unsaved status after exporting or importing a file.
+
+---
+
 ## [0.1.2-BETA] - 2026-04-29
 
 ### 新增功能 / New Features

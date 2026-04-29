@@ -752,7 +752,7 @@
   <nav class="top-nav">
     <div class="top-nav-logo"><img src="assets/logo-icon.png" alt="Story Path Music"></div>
     <div class="top-nav-sep"></div>
-    <span class="top-nav-tag">CuePath <span style="opacity:0.5; font-weight:400; font-size:9px; margin-left:4px; letter-spacing:0;">v0.1.1-BETA</span></span>
+    <span class="top-nav-tag">CuePath <span style="opacity:0.5; font-weight:400; font-size:9px; margin-left:4px; letter-spacing:0;">v0.1.2-BETA</span></span>
     <input id="projectTitleInput" type="text" aria-label="Project Title" spellcheck="false">
     <div class="nav-actions">
       <button id="importJsonButton"    type="button" class="btn-nav">匯入 Import</button>
@@ -777,6 +777,10 @@
       <div class="info-chip">
         <span class="info-chip-label">音檔 Audio</span>
         <span class="info-chip-value" id="fileNameText">尚未載入</span>
+      </div>
+      <div class="info-chip">
+        <span class="info-chip-label">專案 Project</span>
+        <span class="info-chip-value" id="projectStatusText">尚未儲存/匯入</span>
       </div>
       <div class="info-chip">
         <span class="info-chip-label">位置 Now</span>
@@ -920,6 +924,7 @@ const dom = {
   audioFileInput: document.getElementById("audioFileInput"),
   jsonFileInput: document.getElementById("jsonFileInput"),
   fileNameText: document.getElementById("fileNameText"),
+  projectStatusText: document.getElementById("projectStatusText"),
   currentTimeText: document.getElementById("currentTimeText"),
   durationText: document.getElementById("durationText"),
   messageArea: document.getElementById("messageArea"),
@@ -1390,11 +1395,12 @@ function renderDownloadsStatus() {
     dom.downloadsStatusText.textContent = getDownloadsApiStatusText() + "；可按 Set 選 downloads";
     return;
   }
+  const folderName = downloadsDirectoryHandle.name || "downloads";
   if (!downloadsSummary) {
-    dom.downloadsStatusText.textContent = "downloads selected. Click Refresh.";
+    dom.downloadsStatusText.textContent = "已選擇資料夾 [" + folderName + "]，請按 Refresh";
     return;
   }
-  dom.downloadsStatusText.textContent = "downloads: " + downloadsSummary.count + " files / " + formatBytes(downloadsSummary.totalBytes);
+  dom.downloadsStatusText.textContent = "[" + folderName + "]: " + downloadsSummary.count + " 檔案 / " + formatBytes(downloadsSummary.totalBytes);
 }
 
 async function refreshDownloadsStatus(options) {
@@ -1740,10 +1746,35 @@ function render() {
 
 function renderMediaInfo() {
   document.body.classList.toggle("audio-loaded", hasLoadedAudioBody);
-  dom.fileNameText.textContent = state.media.fileName || "尚未載入";
+  
+  // 音檔狀態
+  if (hasLoadedAudioBody) {
+    dom.fileNameText.textContent = state.media.fileName || "未知檔案";
+    dom.fileNameText.style.color = "var(--ok)";
+  } else if (state.media.fileName) {
+    dom.fileNameText.textContent = state.media.fileName;
+    dom.fileNameText.style.color = "var(--danger)";
+  } else {
+    dom.fileNameText.textContent = "尚未載入";
+    dom.fileNameText.style.color = "inherit";
+  }
+
+  // 專案狀態
+  if (hasProjectFileReference) {
+    dom.projectStatusText.textContent = "已連結 .cuepath 檔案";
+    dom.projectStatusText.style.color = "var(--ok)";
+  } else {
+    dom.projectStatusText.textContent = "僅瀏覽器暫存 (未儲存)";
+    dom.projectStatusText.style.color = "var(--text-muted)";
+  }
+
   dom.durationText.textContent = secondsToTimecode(state.media.duration);
-  if (!hasLoadedAudioBody && state.media.fileName) setMessage("請重新載入對應音檔：" + state.media.fileName, false);
-  else if (!hasLoadedAudioBody) setMessage("尚未載入音檔", false);
+  
+  if (!hasLoadedAudioBody && state.media.fileName) {
+    setMessage("請重新載入對應音檔：" + state.media.fileName, false);
+  } else if (!hasLoadedAudioBody) {
+    setMessage("尚未載入音檔", false);
+  }
 }
 
 function renderTimeDisplays() {

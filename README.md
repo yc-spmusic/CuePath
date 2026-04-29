@@ -1,11 +1,11 @@
-# CuePath — v0.1.1-BETA
+# CuePath — v0.1.2-BETA
 
 [繁體中文版](./README.zh-Hant.md)
 
 CuePath is a lightweight player designed specifically for music transcription and audio reference marking.
 
 > **BETA Notes:**
-> - Current version: v0.1.1-BETA.
+> - Current version: v0.1.2-BETA.
 > - A/B Loop dragging functionality is now implemented.
 > - Some advanced features (e.g., download folder tracking) are still under development and testing.
 > - Tested on Windows; macOS functionality is expected but not fully verified.

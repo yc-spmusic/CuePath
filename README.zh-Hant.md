@@ -1,11 +1,12 @@
-# CuePath — v0.1.1-BETA
+# CuePath — v0.1.2-BETA
 
 [English Version](./README.md)
 
 CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放器。
 
 > **BETA 測試說明：**
-> - 目前版本為 v0.1.1-BETA。
+> - 目前版本為 v0.1.2-BETA.
+> - 已實作檔案關聯狀態顯示資訊欄。
 > - 已實作 A/B Loop 標記點拖曳功能。
 > - 部分功能（如下載目錄追蹤等）尚未完全實裝測試。
 > - 已在 Windows 環境測試正常，macOS 尚未經過完整測試。

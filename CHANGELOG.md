@@ -2,6 +2,17 @@
 
 所有對 CuePath 的重要更新都會記錄在此檔案中。 / All notable changes to CuePath will be documented in this file.
 
+## [0.1.2-BETA] - 2026-04-29
+
+### 新增功能 / New Features
+- **檔案關聯狀態顯示 / File Association Status Display**: 在資訊欄新增「專案 (Project)」狀態，顯示目前是否已連結 `.cuepath` 檔案或僅為暫存。 / Added a "Project" status chip to the info bar, indicating if the session is linked to a `.cuepath` file or just stored in local cache.
+- **下載資料夾顯示 / Folder Name Visibility**: 現在會顯示目前所選取的 downloads 資料夾名稱。 / Now displays the name of the selected downloads folder.
+
+### 優化與調整 / Improvements
+- **狀態顏色編碼 / Status Color Coding**: 使用顏色（綠色/紅色）更直觀地顯示音檔與專案的載入/連結狀態。 / Used color coding (green/red) to more intuitively show the loading/linking status of audio and projects.
+
+---
+
 ## [0.1.1-BETA] - 2026-04-29
 
 ### 新增功能 / New Features

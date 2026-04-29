@@ -1,16 +1,14 @@
-# CuePath — v0.1.3-BETA
+# CuePath — v0.1.4-BETA
 
 [English Version](./README.md)
 
 CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放器。
 
 > **BETA 測試說明：**
-> - 目前版本為 v0.1.3-BETA.
-> - 已實作 Ctrl+S 快速鍵匯出專案。
-> - 已實作未儲存狀態顯示（標題 * 號與資訊欄提醒）。
-> - 已實作檔案關聯狀態顯示資訊欄。
-> - 已實作 A/B Loop 標記點拖曳功能。
-> - 部分功能（如下載目錄追蹤等）尚未完全實裝測試。
+> - 目前版本為 v0.1.4-BETA.
+> - **專業儲存體驗**：實裝 File System Access API，一旦連結檔案後，`Ctrl+S` 將直接覆寫存檔而不彈出視窗。
+> - **智能標記系統**：Marker 實裝智能避讓軌道，解決標籤重疊問題。
+> - **區段邊界拖曳**：支援直接在時間軸上拖曳 Region 的左右邊界以調整時間。
 > - 已在 Windows 環境測試正常，macOS 尚未經過完整測試。
 
 核心工具是單一檔案 `CuePath.html`，可直接用瀏覽器開啟，不需要伺服器、Node、React、PHP、資料庫或外部套件。
@@ -18,17 +16,17 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 ## 目前檔案
 
 - `CuePath.html`：主要播放器與標記工具，包含 HTML、CSS、JavaScript。
-- `downloads/`：建議放置下載或轉出的音檔。（功能尚未實裝）
+- `downloads/`：建議放置下載或轉出的音檔。
 - `assets/`、`fonts/`：目前介面使用的本機素材與字型。
 
 ## 使用方式
 
 1. 直接雙擊 `CuePath.html`，或用 Chrome / Edge / Brave / Firefox 開啟。
 2. 按 `載入音檔 Load Audio` 選擇本機音檔。
-3. 第一次載入新專案時，會以音檔名稱作為預設值，詢問專案名稱。
+3. 第一次載入新專案時，會以音檔名稱作為預設值。
 4. 在 timeline 上點擊可跳到指定時間。
 5. 使用 Marker、Region、A/B Loop 進行採譜標記。
-6. 用 `匯出 CuePath` 儲存 `.cuepath` 專案檔，之後可用 `匯入 Import` 還原標記資料。
+6. 用 `匯出 CuePath` 儲存並連結 `.cuepath` 專案檔；連結後可使用 `Ctrl+S` 靜默存檔。
 
 ## 已實作功能
 
@@ -51,6 +49,7 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 ### A/B Loop
 
 - 支援 Set A、Set B 與獨立 Loop Bar。
+- **資訊整合**：A/B 點時間直接顯示在 Loop 控制區塊中。
 - 標記點可在時間軸上直接拖曳調整。
 - 循環模式開啟時，播放到 B 會自動跳回 A。
 - 可從目前 A/B Loop 建立 Region。
@@ -58,19 +57,21 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 ### Marker (標記點)
 
 - 可在目前播放時間新增 Marker。
+- **智能避讓軌道**：標籤自動分層排列，避免重疊。
+- **密集度控制**：極度擁擠時自動隱藏標籤文字，Hover 時顯示。
 - 支援編輯標題、筆記、標籤、狀態選擇、跳轉、刪除與拖曳調整時間。
-- 狀態包含：`todo`、`doing`、`review`、`done`。
 
 ### Region (區段)
 
 - 可由 A/B Loop 建立 Region。
-- 顯示開始、結束、持續時間。
+- **邊界拖曳**：直接在 Timeline 拖曳左右邊緣即可縮放區段。
+- **表格時間編輯**：可在 Region 表格中直接輸入編輯開始與結束時間。
 - 支援編輯標題、筆記、標籤、狀態選擇、跳轉、刪除與一鍵啟用循環。
 
-### 匯入 / 匯出
+### 儲存與同步
 
-- 支援匯出專案檔 (.cuepath JSON)。
-- 支援匯入 .cuepath、.json。
+- **專業儲存**：支援 File System Access API 進行持久化存檔。
+- **狀態同步**：`isDirty` 狀態精確連動標題 `*` 號與狀態列顯示。
 - 支援匯出 CSV 與 Markdown 表格。
 
 ### 拖曳檔案
@@ -81,13 +82,15 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 
 - 自動儲存專案狀態（不含音檔本體）至瀏覽器 localStorage。
 
-### Downloads / Folder API (實驗性)
+### Downloads / Folder API
 
-- 支援瀏覽器 File System Access API（Chromium 系瀏覽器）。
+- 支援瀏覽器 File System Access API。
+- **Brave 專屬引導**：針對 Brave 權限失效提供引導語與「重新授權」按鈕。
 - 可設定下載資料夾以自動掃描與重新載入音檔。
 
 ## 快捷鍵
 
+- `Ctrl + S`：儲存專案 (已連結時為靜默存檔，未連結時為另存新檔)
 - `Space`：播放 / 暫停
 - `ArrowLeft / Right`：跳轉 3 秒 (加 `Shift` 跳轉 10 秒, 加 `Alt` 跳轉 1 秒)
 - `Home`：回到開頭
@@ -101,8 +104,3 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 - macOS (核心功能應可運行)
 - Chrome / Edge / Brave (建議使用)
 - Firefox (支援，但無 Folder API)
-
-## 注意事項
-
-- `.cuepath` 是專案標記檔，不包含音檔。
-- 字體已調整為系統內建之可商用黑體，確保顯示美觀與法律安全。

@@ -2,6 +2,21 @@
 
 所有對 CuePath 的重要更新都會記錄在此檔案中。 / All notable changes to CuePath will be documented in this file.
 
+## [0.1.4-BETA] - 2026-04-29
+
+### 新增功能 / New Features
+- **專業儲存體驗 / Professional Saving Experience**: 實裝 File System Access API 的持久化 Handle。一旦設定過儲存路徑，`Ctrl+S` 將直接覆寫檔案，不再重複彈出下載視窗。 / Implemented persistent file handles via File System Access API. Once a save path is set, `Ctrl+S` silently overwrites the file without redundant download prompts.
+- **Region 邊界拖曳 / Region Boundary Dragging**: 現在可以直接在時間軸上拖曳 Region 的左右邊緣來縮放開始與結束時間。 / Added support for dragging the left and right boundaries of a Region on the timeline to resize its duration.
+- **Region 表格時間編輯 / Region Table Time Editing**: 在 Region 表格中新增「編輯時間」功能，支援直接輸入時間碼進行精確調整。 / Added an "Edit Time" feature in the regions table, allowing precise manual entry of timecodes.
+- **Marker 智能避讓系統 / Marker Smart Lane System**: 實裝自動軌道佈局，防止標籤文字相互重疊；在極度擁擠時自動隱藏標籤，僅在懸停時顯示。 / Implemented a dynamic lane system for Markers to prevent label overlap. Labels automatically hide in high-density areas and reveal on hover.
+
+### 優化與調整 / Improvements
+- **Brave 瀏覽器優化 / Brave Browser Optimizations**: 針對 Brave 的存取限制新增了 `brave://flags` 引導語，並在權限失效時提供「重新授權」按鈕。 / Added `brave://flags` guidance for Brave's restrictions and a "Re-authorize" button for expired permissions.
+- **介面佈局精煉 / UI Layout Refinement**: 將 A/B 點的時間顯示移至 Loop 控制組中，並在狀態列顯示目前連結的專案檔名。 / Moved A/B time displays to the Loop control group and added the linked project filename to the status bar.
+- **狀態同步修正 / Status Sync Logic Fix**: 修正了 `isDirty` 在重新整理或匯入後的同步問題，確保標題 `*` 號準確反映檔案狀態。 / Refined the `isDirty` logic to ensure the `*` indicator accurately reflects the file sync state across refreshes and imports.
+
+---
+
 ## [0.1.3-BETA] - 2026-04-29
 
 ### 新增功能 / New Features

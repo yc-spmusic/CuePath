@@ -574,6 +574,13 @@
     .timeline-region:hover, .timeline-marker:hover .timeline-marker-text {
       outline: 2px solid var(--brand-light); outline-offset: 1px;
     }
+    .region-handle {
+      position: absolute; top: 0; bottom: 0; width: 6px; z-index: 5;
+      cursor: ew-resize; opacity: 0;
+    }
+    .region-handle:hover { opacity: 1; background: rgba(255,255,255,0.4); }
+    .region-handle.left { left: 0; }
+    .region-handle.right { right: 0; }
 
     .timeline-marker {
       position: absolute; top: 12px;
@@ -586,13 +593,31 @@
       border: 0;
       background: transparent;
       color: var(--brand);
+      transition: top 0.2s ease, z-index 0.1s;
     }
-    .timeline-marker.lane-1 { top: 44px; }
+    /* Dynamic lane support */
+    .timeline-marker.lane-dynamic { 
+      top: calc(12px + var(--lane-idx) * 28px); 
+    }
+    .timeline-marker:hover { z-index: 50; }
+    .timeline-marker:hover .timeline-marker-text { 
+      outline: 2px solid var(--brand-light);
+      background: var(--surface);
+      opacity: 1 !important;
+      z-index: 100;
+    }
     .timeline-marker:active { cursor: grabbing; }
     .timeline-marker::before {
       content: ""; position: absolute; left: 0; top: -12px;
-      width: 2px; height: 52px;
-      background: currentColor; opacity: 0.95; transform: none;
+      width: 2px; height: calc(52px + var(--lane-idx) * 28px);
+      background: currentColor; opacity: 0.3; transform: none;
+      pointer-events: none;
+    }
+    /* Indicator dot at the bottom of the lane */
+    .timeline-marker::after {
+      content: ""; position: absolute; left: -2px; top: 0;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; z-index: 6;
     }
 
     .timeline-marker-handle {
@@ -752,7 +777,7 @@
   <nav class="top-nav">
     <div class="top-nav-logo"><img src="assets/logo-icon.png" alt="Story Path Music"></div>
     <div class="top-nav-sep"></div>
-    <span class="top-nav-tag">CuePath <span style="opacity:0.5; font-weight:400; font-size:9px; margin-left:4px; letter-spacing:0;">v0.1.3-BETA</span></span>
+    <span class="top-nav-tag">CuePath <span style="opacity:0.5; font-weight:400; font-size:9px; margin-left:4px; letter-spacing:0;">v0.1.4-BETA</span></span>
     <input id="projectTitleInput" type="text" aria-label="Project Title" spellcheck="false">
     <div class="nav-actions">
       <button id="importJsonButton"    type="button" class="btn-nav">匯入 Import</button>
@@ -789,10 +814,6 @@
       <div class="info-chip">
         <span class="info-chip-label">總長 Length</span>
         <span class="info-chip-value mono" id="durationText">00:00.0</span>
-      </div>
-      <div class="loop-ab-pill" title="Loop A / B">
-        <span class="ab-item"><span class="ab-key">A</span><span class="ab-val" id="loopAText">--:--.-</span></span>
-        <span class="ab-item"><span class="ab-key">B</span><span class="ab-val" id="loopBText">--:--.-</span></span>
       </div>
       <div id="messageArea">尚未載入音檔</div>
     </div>
@@ -834,6 +855,10 @@
     <!-- A-B Loop -->
     <div class="loop-group">
       <span class="loop-label">Loop</span>
+      <div class="loop-ab-pill" title="Loop A / B">
+        <span class="ab-item"><span class="ab-key">A</span><span class="ab-val" id="loopAText">--:--.-</span></span>
+        <span class="ab-item"><span class="ab-key">B</span><span class="ab-val" id="loopBText">--:--.-</span></span>
+      </div>
       <button id="setAButton" type="button" class="btn-loop btn-loop-set" title="Set Loop A">A▼</button>
       <button id="setBButton" type="button" class="btn-loop btn-loop-set" title="Set Loop B">B▼</button>
       <button id="toggleLoopButton"       type="button" class="btn-loop">循環關 Loop Off</button>
@@ -903,8 +928,11 @@ let currentObjectUrl = null;
 let hasLoadedAudioBody = false;
 let markerDrag = null;
 let loopDrag = null;
+let regionDrag = null;
 let playheadDrag = null;
 let suppressNextMarkerClick = false;
+let regionTimeEditIds = new Set();
+let currentFileHandle = null;
 let downloadsDirectoryHandle = null;
 let downloadsSummary = null;
 let waveformPeaks = null;
@@ -1201,9 +1229,10 @@ function validateCuePathJson(data) {
   return Boolean(data && data.schemaVersion === SCHEMA_VERSION && data.project && data.media && data.settings && Array.isArray(data.markers) && Array.isArray(data.regions));
 }
 
-function saveState(showMsg) {
+function saveState(showMsg, resetDirty = false) {
   updateTimestamp();
-  isDirty = true;
+  if (resetDirty) isDirty = false;
+  else isDirty = true;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (showMsg) setMessage("已儲存", false);
   renderMediaInfo();
@@ -1414,9 +1443,11 @@ async function refreshDownloadsStatus(options) {
   }
   const ok = await verifyDownloadsPermission(downloadsDirectoryHandle, Boolean(opts.requestPermission));
   if (!ok) {
-    dom.downloadsStatusText.textContent = "downloads permission needed";
+    dom.downloadsStatusText.textContent = "權限已過期，請點擊「重新授權」";
+    dom.refreshDownloadsButton.textContent = "重新授權 Re-authorize";
     return;
   }
+  dom.refreshDownloadsButton.textContent = "更新 Refresh";
   downloadsSummary = await scanDownloadsFolder(downloadsDirectoryHandle);
   renderDownloadsStatus();
   if (opts.tryReloadAudio) await tryReloadAudioFromDownloads();
@@ -1424,14 +1455,24 @@ async function refreshDownloadsStatus(options) {
 
 async function setDownloadsFolder() {
   if (!("showDirectoryPicker" in window)) {
-    setMessage("目前瀏覽器未開放 Folder API；請用 Load Audio 載入 downloads 檔案", true);
+    const isBrave = navigator.userAgent.includes("Brave");
+    let msg = "目前瀏覽器未開放 Folder API；請用 Load Audio 載入 downloads 檔案";
+    if (isBrave) msg += " (Brave 使用者請檢查 brave://flags/#file-system-access-api)";
+    setMessage(msg, true);
     renderDownloadsStatus();
     return;
   }
-  downloadsDirectoryHandle = await window.showDirectoryPicker({ mode: "read" });
-  await saveDownloadsHandle(downloadsDirectoryHandle);
-  await refreshDownloadsStatus({ requestPermission: true, tryReloadAudio: true });
-  setMessage("downloads folder 已設定", false);
+  try {
+    downloadsDirectoryHandle = await window.showDirectoryPicker({ mode: "read" });
+    await saveDownloadsHandle(downloadsDirectoryHandle);
+    await refreshDownloadsStatus({ requestPermission: true, tryReloadAudio: true });
+    setMessage("downloads folder 已設定", false);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    const isBrave = navigator.userAgent.includes("Brave");
+    if (isBrave) setMessage("無法存取資料夾。Brave 使用者請確保已在 brave://flags 開啟 API，且勿選擇「下載」根目錄。", true);
+    else setMessage("無法存取資料夾：" + err.message, true);
+  }
 }
 
 async function initDownloadsFolder() {
@@ -1620,6 +1661,50 @@ function endLoopDrag() {
   loopDrag = null;
 }
 
+function startRegionDrag(event, regionId, dragPart) {
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  event.preventDefault(); event.stopPropagation();
+  regionDrag = {
+    regionId, dragPart,
+    startX: event.clientX, moved: false,
+    regionElement: event.currentTarget.closest(".timeline-region")
+  };
+}
+
+function continueRegionDrag(event) {
+  if (!regionDrag) return;
+  event.preventDefault();
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  if (Math.abs(event.clientX - regionDrag.startX) > 2) regionDrag.moved = true;
+  const r = state.regions.find(x => x.id === regionDrag.regionId);
+  const duration = getTimelineDuration();
+  if (!r || !duration) return;
+
+  const newTime = Math.max(0, time);
+  if (regionDrag.dragPart === "left") {
+    r.start = Math.min(newTime, r.end - 0.1);
+  } else if (regionDrag.dragPart === "right") {
+    r.end = Math.max(newTime, r.start + 0.1);
+  }
+  r.updatedAt = new Date().toISOString();
+
+  if (regionDrag.regionElement) {
+    const s = clamp(r.start / duration, 0, 1) * 100;
+    const e = clamp(r.end / duration, 0, 1) * 100;
+    regionDrag.regionElement.style.left = s + "%";
+    regionDrag.regionElement.style.width = Math.max(0.5, e - s) + "%";
+  }
+}
+
+function endRegionDrag() {
+  if (regionDrag) {
+    if (regionDrag.moved) { sortRegions(); saveState(false); renderTimeline(); renderRegions(); }
+  }
+  regionDrag = null;
+}
+
 function startPlayheadDrag(event) {
   const time = getTimelinePointerTime(event);
   if (time === null) return;
@@ -1642,37 +1727,43 @@ function endPlayheadDrag() {
 
 async function saveCuePathProjectFile() {
   updateTimestamp();
-  const filename = sanitizeFilename(state.project.title) + ".cuepath";
   const content = JSON.stringify(state, null, 2);
   const mimeType = "application/json;charset=utf-8";
+
   if ("showSaveFilePicker" in window) {
     try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: filename,
-        types: [{
-          description: "CuePath Project",
-          accept: { "application/json": [".cuepath", ".json"] }
-        }]
-      });
-      const writable = await handle.createWritable();
+      if (!currentFileHandle) {
+        const filename = sanitizeFilename(state.project.title) + ".cuepath";
+        currentFileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: "CuePath Project",
+            accept: { "application/json": [".cuepath", ".json"] }
+          }]
+        });
+      }
+      const writable = await currentFileHandle.createWritable();
       await writable.write(new Blob([content], { type: mimeType }));
       await writable.close();
       hasProjectFileReference = true;
-      saveState(false);
-      setMessage("CuePath 專案檔已儲存", false);
+      saveState(false, true);
+      setMessage("專案已儲存至檔案", false);
       return true;
     } catch (error) {
       if (error && error.name === "AbortError") {
-        setMessage("已取消儲存 CuePath 專案檔", false);
+        setMessage("已取消儲存", false);
         return false;
       }
+      currentFileHandle = null; // Reset handle on error
     }
   }
+  
+  // Fallback for browsers without File System Access API
+  const filename = sanitizeFilename(state.project.title) + ".cuepath";
   downloadFile(filename, content, mimeType);
   hasProjectFileReference = true;
-  isDirty = false;
-  saveState(false);
-  setMessage("CuePath 專案檔已下載", false);
+  saveState(false, true);
+  setMessage("專案已匯出下載", false);
   return true;
 }
 
@@ -1683,20 +1774,23 @@ function exportJson() {
 function importJsonFile(file, afterImport) {
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function() {
+  reader.onload = async function() {
     try {
       const parsed = JSON.parse(String(reader.result || ""));
       if (!validateCuePathJson(parsed)) throw new Error("Invalid schema");
       state = normalizeImportedState(parsed); sortMarkers(); sortRegions();
+      
+      // If the file comes from an input file, we can't get a persistent handle easily, 
+      // but we can check if it's already recorded.
       hasProjectFileReference = true;
       isDirty = false;
-      projectFileSavePrompted = false;      hasLoadedAudioBody = false;
+      projectFileSavePrompted = false;
       waveformBuildId += 1;
       waveformPeaks = null;
       waveformStatus = "";
       if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
       dom.audioElement.removeAttribute("src"); dom.audioElement.load();
-      saveState(false); render(); setMessage("JSON 已匯入", false);
+      saveState(false, true); render(); setMessage("專案已匯入", false);
       if (state.media.fileName) setMessage("請重新載入對應音檔：" + state.media.fileName, false);
       if (typeof afterImport === "function") afterImport();
     } catch(e) { setMessage("無效的 CuePath JSON 檔案", true); }
@@ -1770,10 +1864,18 @@ function renderMediaInfo() {
   }
 
   // 專案狀態
-  if (hasProjectFileReference) {
-    const statusText = isDirty ? "檔案未儲存" : "檔案已儲存";
-    dom.projectStatusText.textContent = statusText + " (已連結 .cuepath)";
+  if (currentFileHandle) {
+    const statusText = isDirty ? "● 檔案未儲存" : "● 檔案已同步";
+    // 顯示檔名，如果可能的話模擬路徑顯示（HTML5 FileHandle 限制無法直接拿絕對路徑，以檔名為主）
+    dom.projectStatusText.textContent = `${statusText} (${currentFileHandle.name})`;
     dom.projectStatusText.style.color = isDirty ? "var(--danger)" : "var(--ok)";
+    dom.projectStatusText.style.maxWidth = "280px";
+    dom.projectStatusText.style.overflow = "hidden";
+    dom.projectStatusText.style.textOverflow = "ellipsis";
+    dom.projectStatusText.style.whiteSpace = "nowrap";
+  } else if (hasProjectFileReference) {
+    dom.projectStatusText.textContent = "○ 連結已斷開 (請重新另存)";
+    dom.projectStatusText.style.color = "var(--text-muted)";
   } else {
     dom.projectStatusText.textContent = "僅瀏覽器暫存 (未儲存)";
     dom.projectStatusText.style.color = "var(--text-muted)";
@@ -1921,30 +2023,67 @@ function renderTimeline() {
     el.style.left = s + "%"; el.style.width = Math.max(0.5, e - s) + "%";
     el.textContent = region.label || secondsToTimecode(region.start);
     el.title = secondsToTimecode(region.start) + " – " + secondsToTimecode(region.end);
-    el.addEventListener("click", ev => { ev.stopPropagation(); loopRegion(region.id); });
+    
+    const lh = document.createElement("div"); lh.className = "region-handle left";
+    lh.addEventListener("pointerdown", ev => startRegionDrag(ev, region.id, "left"));
+    const rh = document.createElement("div"); rh.className = "region-handle right";
+    rh.addEventListener("pointerdown", ev => startRegionDrag(ev, region.id, "right"));
+    el.append(lh, rh);
+
+    el.addEventListener("click", ev => { 
+      if (ev.target === lh || ev.target === rh) return;
+      if (regionDrag && regionDrag.moved) return;
+      ev.stopPropagation(); loopRegion(region.id); 
+    });
     regionTrack.appendChild(el);
   });
 
   sortMarkers();
-  const usedLanes = [];
+  const timelineWidth = dom.cueTimeline.clientWidth || 1000;
+  const laneOccupancy = []; // Array of arrays: each inner array represents a lane and stores occupied pixel ranges
+  
   state.markers.forEach(marker => {
     const leftPct = clamp(marker.time / duration, 0, 1) * 100;
-    let lane = 0;
-    for (let i = 0; i < usedLanes.length; i++) {
-      if (Math.abs(leftPct - usedLanes[i]) >= 8) { lane = i; break; }
-      lane = i + 1;
+    const xPos = (leftPct / 100) * timelineWidth;
+    const labelWidth = 100; // Estimated label width in pixels
+    const labelMargin = 10;
+    const range = [xPos, xPos + labelWidth + labelMargin];
+
+    let laneIdx = 0;
+    while (true) {
+      if (!laneOccupancy[laneIdx]) {
+        laneOccupancy[laneIdx] = [range];
+        break;
+      }
+      const collision = laneOccupancy[laneIdx].some(r => (range[0] < r[1] && range[1] > r[0]));
+      if (!collision) {
+        laneOccupancy[laneIdx].push(range);
+        break;
+      }
+      laneIdx++;
+      if (laneIdx > 10) break; // Safety limit
     }
-    usedLanes[lane] = leftPct;
+
     const el = document.createElement("div");
-    el.className = "timeline-marker status-" + normalizeStatus(marker.status) + (lane > 0 ? " lane-" + lane : "");
+    el.className = "timeline-marker lane-dynamic status-" + normalizeStatus(marker.status);
     el.style.left = leftPct + "%";
+    el.style.setProperty("--lane-idx", laneIdx);
+    
+    // Too many lanes handling: hide text if deep, show on hover
+    const isCrowded = laneIdx >= 4;
+    
     el.title = secondsToTimecode(marker.time) + " — " + (marker.label || "Marker");
     const lh = document.createElement("div"); lh.className = "timeline-marker-handle left";
     lh.addEventListener("pointerdown", ev => startMarkerDrag(ev, marker.id, "left"));
-    const txt = document.createElement("span"); txt.className = "timeline-marker-text";
+    
+    const txt = document.createElement("span"); 
+    txt.className = "timeline-marker-text";
     txt.textContent = marker.label || secondsToTimecode(marker.time);
+    if (isCrowded) txt.style.opacity = "0"; // CSS hover will show it
+    
     const rh = document.createElement("div"); rh.className = "timeline-marker-handle right";
     rh.addEventListener("pointerdown", ev => startMarkerDrag(ev, marker.id, "right"));
+    
     el.append(lh, txt, rh);
     el.addEventListener("pointerdown", ev => { if (ev.target === lh || ev.target === rh) return; startMarkerDrag(ev, marker.id, "center"); });
     el.addEventListener("click", ev => {
@@ -2010,16 +2149,26 @@ function renderRegions() {
   const tbody = document.createElement("tbody");
   state.regions.forEach(region => {
     const dur = region.end - region.start;
+    const isEditing = regionTimeEditIds.has(region.id);
     const tr = document.createElement("tr");
+    
+    let timeStartHtml = '<td>' + secondsToTimecode(region.start) + '</td>';
+    let timeEndHtml = '<td>' + secondsToTimecode(region.end) + '</td>';
+    
+    if (isEditing) {
+      timeStartHtml = '<td><input type="text" style="width:70px; font-family:monospace; font-size:12px; padding:2px 4px;" value="' + secondsToTimecode(region.start) + '" data-id="' + region.id + '" data-field="start"></td>';
+      timeEndHtml = '<td><input type="text" style="width:70px; font-family:monospace; font-size:12px; padding:2px 4px;" value="' + secondsToTimecode(region.end) + '" data-id="' + region.id + '" data-field="end"></td>';
+    }
+
     tr.innerHTML =
-      '<td class="time-cell">' + secondsToTimecode(region.start) + '</td>' +
-      '<td class="time-cell">' + secondsToTimecode(region.end) + '</td>' +
+      timeStartHtml + timeEndHtml +
       '<td class="time-cell">' + secondsToTimecode(dur) + '</td>' +
       '<td><input type="text" value="' + escapeHtml(region.label) + '" data-id="' + region.id + '" data-field="label"></td>' +
       '<td><textarea data-id="' + region.id + '" data-field="note">' + escapeHtml(region.note) + '</textarea></td>' +
       '<td><input type="text" value="' + escapeHtml(tagsToInput(region.tags)) + '" data-id="' + region.id + '" data-field="tags" placeholder="tag1, tag2"></td>' +
       '<td class="small-cell"><select data-id="' + region.id + '" data-field="status">' + renderStatusOptions(region.status) + '</select></td>' +
       '<td class="actions-cell"><div class="row-actions">' +
+        '<button type="button" class="btn-row" data-action="toggle-edit" data-id="' + region.id + '">' + (isEditing ? "完成" : "編輯時間") + '</button>' +
         '<button type="button" class="btn-row" data-action="jump" data-id="' + region.id + '">跳至 Jump</button>' +
         '<button type="button" class="btn-row" data-action="loop" data-id="' + region.id + '">Loop</button>' +
         '<button type="button" class="btn-row btn-danger" data-action="delete" data-id="' + region.id + '">刪除 Delete</button>' +
@@ -2027,12 +2176,44 @@ function renderRegions() {
     tbody.appendChild(tr);
   });
   table.append(thead, tbody); c.replaceChildren(table);
-  c.querySelectorAll("input, select, textarea").forEach(el => el.addEventListener("change", () => updateRegion(el.dataset.id, el.dataset.field, el.value)));
-  c.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => {
-    if (btn.dataset.action === "jump") jumpToRegion(btn.dataset.id);
-    else if (btn.dataset.action === "loop") loopRegion(btn.dataset.id);
-    else if (btn.dataset.action === "delete") deleteRegion(btn.dataset.id);
-  }));
+  
+  c.querySelectorAll("input, select, textarea").forEach(el => {
+    el.addEventListener("change", () => {
+      const field = el.dataset.field;
+      if (field === "start" || field === "end") {
+        const val = timecodeToSeconds(el.value);
+        if (val !== null) updateRegion(el.dataset.id, field, val);
+        else renderRegions();
+      } else {
+        updateRegion(el.dataset.id, field, el.value);
+      }
+    });
+  });
+
+  c.querySelectorAll("[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      if (action === "toggle-edit") {
+        if (regionTimeEditIds.has(id)) regionTimeEditIds.delete(id);
+        else regionTimeEditIds.add(id);
+        renderRegions();
+      }
+      else if (action === "jump") jumpToRegion(id);
+      else if (action === "loop") loopRegion(id);
+      else if (action === "delete") deleteRegion(id);
+    });
+  });
+}
+
+function timecodeToSeconds(tc) {
+  if (!tc || typeof tc !== "string") return null;
+  const parts = tc.split(":");
+  if (parts.length !== 2) return null;
+  const min = parseFloat(parts[0]);
+  const sec = parseFloat(parts[1]);
+  if (isNaN(min) || isNaN(sec)) return null;
+  return min * 60 + sec;
 }
 
 function handleShortcut(event) {
@@ -2106,16 +2287,19 @@ function bindEventListeners() {
   document.addEventListener("pointermove", ev => {
     continueMarkerDrag(ev);
     continueLoopDrag(ev);
+    continueRegionDrag(ev);
     continuePlayheadDrag(ev);
   });
   document.addEventListener("pointerup", () => {
     endMarkerDrag();
     endLoopDrag();
+    endRegionDrag();
     endPlayheadDrag();
   });
   document.addEventListener("pointercancel", () => {
     endMarkerDrag();
     endLoopDrag();
+    endRegionDrag();
     endPlayheadDrag();
   });
   document.addEventListener("dragenter", ev => { ev.preventDefault(); document.body.classList.add("drag-over"); });

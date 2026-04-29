@@ -18,6 +18,7 @@ The core tool is a single file `CuePath.html`, which can be opened directly in a
 - `CuePath.html`: Main player and marking tool, containing HTML, CSS, and JavaScript.
 - `downloads/`: Suggested directory for downloaded or exported audio files.
 - `assets/`, `fonts/`: Local assets and legacy fonts used by the interface.
+- `YTDL-Helper.bat`: Standalone Windows helper for downloading YouTube audio with `yt-dlp` and `ffmpeg`.
 
 ## Usage
 
@@ -78,6 +79,15 @@ The core tool is a single file `CuePath.html`, which can be opened directly in a
 - Support for File System Access API (Chromium-based browsers).
 - **Brave Support:** Guidance for `brave://flags` and specialized re-authorization logic.
 - Set a downloads folder to scan for files and auto-reload audio/projects.
+
+## YouTube Audio Helper
+
+`YTDL-Helper.bat` is a standalone Windows helper for downloading YouTube audio files.
+
+- Checks for `yt-dlp` and `ffmpeg`.
+- Provides an interactive menu for entering a YouTube URL and downloading audio.
+- Downloaded files can be placed in `downloads/` and loaded into CuePath.
+- This helper is separate from the core CuePath app; CuePath still works offline with local audio files.
 
 ## Shortcuts
 

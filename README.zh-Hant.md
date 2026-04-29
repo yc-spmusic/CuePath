@@ -18,6 +18,7 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 - `CuePath.html`：主要播放器與標記工具，包含 HTML、CSS、JavaScript。
 - `downloads/`：建議放置下載或轉出的音檔。
 - `assets/`、`fonts/`：目前介面使用的本機素材與字型。
+- `YTDL-Helper.bat`：獨立 Windows 小工具，用於透過 `yt-dlp` 與 `ffmpeg` 下載 YouTube 音檔。
 
 ## 使用方式
 
@@ -87,6 +88,15 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 - 支援瀏覽器 File System Access API。
 - **Brave 專屬引導**：針對 Brave 權限失效提供引導語與「重新授權」按鈕。
 - 可設定下載資料夾以自動掃描與重新載入音檔。
+
+## YouTube 音檔下載小工具
+
+`YTDL-Helper.bat` 是獨立 Windows 小工具，用來協助下載 YouTube 音檔。
+
+- 會檢查 `yt-dlp` 與 `ffmpeg`。
+- 提供互動式選單，可輸入 YouTube 網址並下載音檔。
+- 下載結果可放入 `downloads/`，再由 CuePath 載入。
+- 這個工具與 CuePath 主程式分離；CuePath 仍可完全離線處理本機音檔。
 
 ## 快捷鍵
 

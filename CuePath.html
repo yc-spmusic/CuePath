@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CuePath — 故事痕跡音樂藝術</title>
   <style>
-    @font-face { font-family:'GenYoGothic TW'; font-weight:300; src:url('fonts/GenYoGothic-L.ttc') format('truetype'); font-display:swap; }
-    @font-face { font-family:'GenYoGothic TW'; font-weight:400; src:url('fonts/GenYoGothic-R.ttc') format('truetype'); font-display:swap; }
-    @font-face { font-family:'GenYoGothic TW'; font-weight:500; src:url('fonts/GenYoGothic-M.ttc') format('truetype'); font-display:swap; }
-    @font-face { font-family:'GenYoGothic TW'; font-weight:700; src:url('fonts/GenYoGothic-B.ttc') format('truetype'); font-display:swap; }
-
+    /* 使用系統內建可商用黑體，確保在各平台顯示一致且法律安全 */
     :root {
       --bg:           #F7F3EE;
       --surface:      #FFFFFF;
@@ -49,7 +45,7 @@
     html, body { height: 100%; margin: 0; }
 
     body {
-      font-family: 'GenYoGothic TW', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
       background: var(--bg);
       color: var(--text);
       font-size: 13px;
@@ -756,7 +752,7 @@
   <nav class="top-nav">
     <div class="top-nav-logo"><img src="assets/logo-icon.png" alt="Story Path Music"></div>
     <div class="top-nav-sep"></div>
-    <span class="top-nav-tag">CuePath <span style="opacity:0.5; font-weight:400; font-size:9px; margin-left:4px; letter-spacing:0;">v1.0.0-BEAT</span></span>
+    <span class="top-nav-tag">CuePath <span style="opacity:0.5; font-weight:400; font-size:9px; margin-left:4px; letter-spacing:0;">v0.1.1-BETA</span></span>
     <input id="projectTitleInput" type="text" aria-label="Project Title" spellcheck="false">
     <div class="nav-actions">
       <button id="importJsonButton"    type="button" class="btn-nav">匯入 Import</button>
@@ -902,6 +898,7 @@ let state = createInitialState();
 let currentObjectUrl = null;
 let hasLoadedAudioBody = false;
 let markerDrag = null;
+let loopDrag = null;
 let playheadDrag = null;
 let suppressNextMarkerClick = false;
 let downloadsDirectoryHandle = null;
@@ -1577,6 +1574,43 @@ function endMarkerDrag() {
   markerDrag = null;
 }
 
+function startLoopDrag(event, pointLabel) {
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  event.preventDefault(); event.stopPropagation();
+  loopDrag = {
+    pointLabel,
+    startX: event.clientX, moved: false,
+    pointElement: event.currentTarget.closest(".timeline-loop-point")
+  };
+}
+
+function continueLoopDrag(event) {
+  if (!loopDrag) return;
+  event.preventDefault();
+  const time = getTimelinePointerTime(event);
+  if (time === null) return;
+  if (Math.abs(event.clientX - loopDrag.startX) > 2) loopDrag.moved = true;
+  const duration = getTimelineDuration();
+  if (!duration) return;
+  
+  const label = loopDrag.pointLabel;
+  if (label === "A") state.settings.loop.a = Math.max(0, time);
+  else if (label === "B") state.settings.loop.b = Math.max(0, time);
+
+  if (loopDrag.pointElement) {
+    loopDrag.pointElement.style.left = clamp(time / duration, 0, 1) * 100 + "%";
+  }
+  renderLoop();
+}
+
+function endLoopDrag() {
+  if (loopDrag) {
+    if (loopDrag.moved) { saveState(false); renderTimeline(); }
+  }
+  loopDrag = null;
+}
+
 function startPlayheadDrag(event) {
   const time = getTimelinePointerTime(event);
   if (time === null) return;
@@ -1826,8 +1860,10 @@ function renderTimeline() {
     el.style.left = clamp(time / duration, 0, 1) * 100 + "%";
     el.title = "Loop " + label + " " + secondsToTimecode(time);
     el.innerHTML = '<span class="loop-point-label">' + label + '</span><span class="loop-point-arrow">▼</span>';
+    el.addEventListener("pointerdown", ev => startLoopDrag(ev, label));
     el.addEventListener("click", ev => {
       ev.stopPropagation();
+      if (loopDrag && loopDrag.moved) return;
       seekTo(time, { disableLoop: true });
     });
     loopTrack.appendChild(el);
@@ -2016,12 +2052,21 @@ function bindEventListeners() {
   dom.audioElement.addEventListener("play", renderPlayButton);
   dom.audioElement.addEventListener("pause", renderPlayButton);
   document.addEventListener("keydown", handleShortcut);
-  document.addEventListener("pointermove", continueMarkerDrag);
-  document.addEventListener("pointermove", continuePlayheadDrag);
-  document.addEventListener("pointerup", endMarkerDrag);
-  document.addEventListener("pointerup", endPlayheadDrag);
-  document.addEventListener("pointercancel", endMarkerDrag);
-  document.addEventListener("pointercancel", endPlayheadDrag);
+  document.addEventListener("pointermove", ev => {
+    continueMarkerDrag(ev);
+    continueLoopDrag(ev);
+    continuePlayheadDrag(ev);
+  });
+  document.addEventListener("pointerup", () => {
+    endMarkerDrag();
+    endLoopDrag();
+    endPlayheadDrag();
+  });
+  document.addEventListener("pointercancel", () => {
+    endMarkerDrag();
+    endLoopDrag();
+    endPlayheadDrag();
+  });
   document.addEventListener("dragenter", ev => { ev.preventDefault(); document.body.classList.add("drag-over"); });
   document.addEventListener("dragover",  ev => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = "copy"; document.body.classList.add("drag-over"); });
   document.addEventListener("dragleave", ev => { if (!ev.relatedTarget) document.body.classList.remove("drag-over"); });

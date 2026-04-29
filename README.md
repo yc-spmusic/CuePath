@@ -1,6 +1,14 @@
-# CuePath(BETA)_MVP
+# CuePath — v0.1.1-BETA
 
-CuePath 是一個本機版音樂採譜／參考音檔標記播放器。核心工具是單一檔案 `CuePath.html`，可直接用瀏覽器開啟，不需要伺服器、Node、React、PHP、資料庫或外部套件。
+CuePath 是一個專為音樂採譜與參考音源標記設計的輕量級播放器。
+
+> **BETA 測試說明：**
+> - 目前版本為 v0.1.1-BETA。
+> - 已實作 A/B Loop 標記點拖曳功能。
+> - 部分功能（如下載目錄追蹤等）尚未完全實裝測試。
+> - 已在 Windows 環境測試正常，macOS 尚未經過完整測試。
+
+核心工具是單一檔案 `CuePath.html`，可直接用瀏覽器開啟，不需要伺服器、Node、React、PHP、資料庫或外部套件。
 
 ## 目前檔案
 

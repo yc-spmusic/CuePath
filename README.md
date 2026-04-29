@@ -1,13 +1,11 @@
-# CuePath HTML MVP
+# CuePath(BETA)_MVP
 
-CuePath 是一個本機版音樂採譜／參考音源標記播放器。核心工具是單一檔案 `CuePath.html`，可直接用瀏覽器開啟，不需要伺服器、Node、React、PHP、資料庫或外部套件。
+CuePath 是一個本機版音樂採譜／參考音檔標記播放器。核心工具是單一檔案 `CuePath.html`，可直接用瀏覽器開啟，不需要伺服器、Node、React、PHP、資料庫或外部套件。
 
 ## 目前檔案
 
 - `CuePath.html`：主要播放器與標記工具，包含 HTML、CSS、JavaScript。
-- `downloads/`：建議放置下載或轉出的音檔。
-- `CuePath-Download-YouTube.bat`：Windows 輔助啟動檔。
-- `CuePath-Download-YouTube.ps1`：Windows YouTube 下載輔助腳本，需要另外安裝 `yt-dlp`，建議搭配 `ffmpeg`。
+- `downloads/`：建議放置下載或轉出的音檔。（功能尚未實裝）
 - `assets/`、`fonts/`：目前介面使用的本機素材與字型。
 
 ## 使用方式

@@ -1,4 +1,4 @@
-# CuePath — v0.1.4-BETA
+# CuePath — v0.2.0-BETA
 
 [English Version](./README.md)
 
@@ -8,7 +8,7 @@
 CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放器。
 
 > **BETA 測試說明：**
-> - 目前版本為 v0.1.4-BETA.
+> - 目前版本為 v0.2.0-BETA（播放器核心抽成可嵌入的 ES module；獨立版對使用者沒有改變）。
 > - **專業儲存體驗**：實裝 File System Access API，一旦連結檔案後，`Ctrl+S` 將直接覆寫存檔而不彈出視窗。
 > - **智能標記系統**：Marker 實裝智能避讓軌道，解決標籤重疊問題。
 > - **區段邊界拖曳**：支援直接在時間軸上拖曳 Region 的左右邊界以調整時間。
@@ -18,7 +18,8 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 
 ## 目前檔案
 
-- `CuePath.html`：主要播放器與標記工具，包含 HTML、CSS、JavaScript。
+- `CuePath.html`：主要播放器與標記工具，包含 HTML、CSS、JavaScript（由 `src/` 以 `npm run build` 產生）。
+- `src/`、`dist/`、`docs/`、`test/`：可重用的播放器核心（ES module + CSS）、建置產物、peaks 格式規格與測試。
 - `downloads/`：建議放置下載或轉出的音檔。
 - `assets/`、`fonts/`：目前介面使用的本機素材與字型。
 - `YTDL-Helper.bat`：獨立 Windows 小工具，用於透過 `yt-dlp` 與 `ffmpeg` 下載 YouTube 音檔。
@@ -91,6 +92,54 @@ CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放
 - 支援瀏覽器 File System Access API。
 - **Brave 專屬引導**：針對 Brave 權限失效提供引導語與「重新授權」按鈕。
 - 可設定下載資料夾以自動掃描與重新載入音檔。
+
+## 建置與嵌入（v0.2.0）
+
+播放器核心已抽成可重用的 ES module（`src/cuepath-core.js` + `src/cuepath-core.css`），獨立版 `CuePath.html` 由它產生。
+**已提交的 `CuePath.html` 仍是單一、自給自足的檔案，直接雙擊從磁碟開啟（`file://`）即可使用**——打包後的程式以一般 script 內嵌，
+因為 Chrome 不允許在 `file://` 載入 ES module。
+
+```
+npm install        # esbuild（建置）+ puppeteer-core（僅測試用）
+npm run build      # -> CuePath.html、dist/cuepath-core.mjs、dist/cuepath-core.css
+npm test           # 無頭 Chrome/Edge：file:// 開啟獨立版 + http 執行 test/url-load.html
+```
+
+請勿手動編輯 `CuePath.html`；修改 `src/` 後重新建置。獨立版執行時沒有任何相依套件（Node 只在重新建置時需要）。
+
+### 嵌入其他網頁應用（例如 React 元件）
+
+把 `dist/cuepath-core.mjs` 與 `dist/cuepath-core.css` 放進你的專案：
+
+```js
+import { createCuePath } from "./vendor/cuepath-core.mjs";
+import "./vendor/cuepath-core.css";           // 所有樣式都限定在 .cuepath-root 之下，不會污染宿主頁面
+
+const cp = createCuePath(containerElement, {
+  storageKey: "hub:" + audioId,               // localStorage key（預設 "cuepath:html:mvp"；false 表示不儲存）
+  crossOrigin: null,                          // <audio> 的 crossorigin："anonymous" | "use-credentials" | null
+  labels: { play: "Play", pause: "Pause" },   // 覆寫任何介面文字，見原始碼 DEFAULT_LABELS
+});
+await cp.loadUrl("/api/audio/42/stream", {
+  peaksUrl: "/api/audio/42/peaks.json",       // 或 peaks: {...}；格式見 docs/peaks-format.md
+  title: "Demo mix.wav",
+  fetchOptions: { credentials: "include" },   // 用於取得 peaks（以及無 peaks 時的解碼備援）
+});
+cp.on("change", state => save(state));
+// React cleanup
+return () => cp.destroy();
+```
+
+API：`loadFile(file)`、`loadUrl(url, { peaksUrl?, peaks?, title?, fetchOptions?, crossOrigin? })`、`loadPeaks(json)`、
+`getState()` / `setState(state)`、`on(event, cb)`（回傳取消訂閱函式）/ `off`、`play()`、`pause()`、`seek(s)`、
+`setPlaybackRate(r)`、`getAudioElement()`、`toCsv()`、`toMarkdown()`、`exportProject()`、`destroy()`。
+事件：`ready`、`peaks`、`change`、`timeupdate`、`play`、`pause`、`message`、`error`、`save-request`（Ctrl+S；沒人監聽時會儲存 `.cuepath` 檔）。
+`loadUrl` 以 `<audio src>` 串流播放；有提供 peaks 時**不會**下載或解碼整個檔案；沒有 peaks 時退回整檔解碼。
+`destroy()` 會移除所有事件監聽、動畫幀、進行中的 fetch 與 AudioContext；`destroy()` 時仍在進行的 `loadUrl()` 會以 `Error("destroyed")` reject。
+
+想調整介面的宿主可用 `ui: { toolbar, loadButton, downloads }`、`shortcuts` / `dragDrop`（預設 `"root"`，可設 `"document"` 或 `false`）、
+`header: { logoSrc, logoAlt, tag, version }`。`standalone: true`（`CuePath.html` 使用）會啟用應用層行為：儲存/取代對話框、離開頁面警告、
+downloads 資料夾、全頁快捷鍵與拖放。Peaks 格式：[docs/peaks-format.md](./docs/peaks-format.md)。
 
 ## YouTube 音檔下載小工具
 

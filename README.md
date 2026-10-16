@@ -1,4 +1,4 @@
-# CuePath — v0.1.4-BETA
+# CuePath — v0.2.0-BETA
 [繁體中文版](./README.zh-Hant.md)
 
 ![CuePath Interface](./assets/cuepath-screenshot.png)
@@ -6,17 +6,18 @@
 CuePath is a lightweight player designed specifically for music transcription and audio reference marking.
 
 > **BETA Notes:**
-> - Current version: v0.1.4-BETA.
+> - Current version: v0.2.0-BETA (player core extracted into an embeddable ES module; the standalone app is unchanged for users).
 > - **Professional Saving:** Once a `.cuepath` file is saved/linked, `Ctrl+S` performs a silent overwrite using the File System Access API.
 > - **Smart Markers:** Markers now use a dynamic lane system to prevent label overlap.
 > - **Region Editing:** Regions can now be resized by dragging their boundaries on the timeline.
 > - Tested on Windows; macOS functionality is expected but not fully verified.
 
-The core tool is a single file `CuePath.html`, which can be opened directly in a browser without the need for a server, Node.js, React, PHP, databases, or external packages.
+The core tool is a single file `CuePath.html`, which can be opened directly in a browser without the need for a server, Node.js, React, PHP, databases, or external packages. (Node.js is only needed if you want to rebuild it from `src/`, see below.)
 
 ## Files
 
-- `CuePath.html`: Main player and marking tool, containing HTML, CSS, and JavaScript.
+- `CuePath.html`: Main player and marking tool, containing HTML, CSS, and JavaScript. Generated from `src/` by `npm run build`.
+- `src/`, `dist/`, `docs/`, `test/`: Reusable player core (ES module + CSS), its built artifacts, the peaks format spec, and the tests.
 - `downloads/`: Suggested directory for downloaded or exported audio files.
 - `assets/`, `fonts/`: Local assets and legacy fonts used by the interface.
 - `YTDL-Helper.bat`: Standalone Windows helper for downloading YouTube audio with `yt-dlp` and `ffmpeg`.
@@ -80,6 +81,57 @@ The core tool is a single file `CuePath.html`, which can be opened directly in a
 - Support for File System Access API (Chromium-based browsers).
 - **Brave Support:** Guidance for `brave://flags` and specialized re-authorization logic.
 - Set a downloads folder to scan for files and auto-reload audio/projects.
+
+## Building and embedding (v0.2.0)
+
+The player is now a reusable ES module (`src/cuepath-core.js` + `src/cuepath-core.css`); the standalone
+`CuePath.html` is generated from it. **The committed `CuePath.html` is a single self-contained file and still
+works by double-click from disk (`file://`)** - the bundle is inlined as a classic script, because Chrome
+refuses to load ES modules over `file://`.
+
+```
+npm install        # esbuild (build) + puppeteer-core (tests only)
+npm run build      # -> CuePath.html, dist/cuepath-core.mjs, dist/cuepath-core.css
+npm test           # headless Chrome/Edge: standalone over file:// + test/url-load.html over http
+```
+
+Do not edit `CuePath.html` by hand; edit `src/` and rebuild. The runtime of the standalone file has no dependencies.
+
+### Embedding in another web app (e.g. a React component)
+
+Vendor `dist/cuepath-core.mjs` and `dist/cuepath-core.css`, then:
+
+```js
+import { createCuePath } from "./vendor/cuepath-core.mjs";
+import "./vendor/cuepath-core.css";           // all rules are scoped under .cuepath-root
+
+const cp = createCuePath(containerElement, {
+  storageKey: "hub:" + audioId,               // localStorage key (default "cuepath:html:mvp"; false = no persistence)
+  crossOrigin: null,                          // "anonymous" | "use-credentials" | null for the <audio> element
+  labels: { play: "Play", pause: "Pause" },   // override any UI text, see DEFAULT_LABELS in the source
+});
+await cp.loadUrl("/api/audio/42/stream", {
+  peaksUrl: "/api/audio/42/peaks.json",       // or peaks: {...}; docs/peaks-format.md
+  title: "Demo mix.wav",
+  fetchOptions: { credentials: "include" },   // used for the peaks fetch (and the decode fallback)
+});
+cp.on("change", state => save(state));
+// React cleanup
+return () => cp.destroy();
+```
+
+API: `loadFile(file)`, `loadUrl(url, { peaksUrl?, peaks?, title?, fetchOptions?, crossOrigin? })`, `loadPeaks(json)`,
+`getState()` / `setState(state)`, `on(event, cb)` (returns an unsubscribe function) / `off`, `play()`, `pause()`,
+`seek(s)`, `setPlaybackRate(r)`, `getAudioElement()`, `toCsv()`, `toMarkdown()`, `exportProject()`, `destroy()`.
+Events: `ready`, `peaks`, `change`, `timeupdate`, `play`, `pause`, `message`, `error`, `save-request` (Ctrl+S; if nobody listens, a `.cuepath` file is saved).
+`loadUrl` streams through `<audio src>` and never decodes the file when peaks are supplied; without peaks it falls back to
+decoding the whole file. `destroy()` removes every listener, animation frame, in-flight fetch and AudioContext. A
+`loadUrl()` still pending at `destroy()` rejects with `Error("destroyed")`.
+
+Options for a host app that wants more or less UI: `ui: { toolbar, loadButton, downloads }`, `shortcuts` / `dragDrop`
+(`"root"` by default, `"document"`, or `false`), `header: { logoSrc, logoAlt, tag, version }`. The `standalone: true` flag
+(used by `CuePath.html`) turns on the app-level behaviour: save/replace dialogs, unload guard, downloads folder, document-wide
+shortcuts and drop target. Peaks format: [docs/peaks-format.md](./docs/peaks-format.md).
 
 ## YouTube Audio Helper
 

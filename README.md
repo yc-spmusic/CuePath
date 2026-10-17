@@ -1,4 +1,4 @@
-# CuePath — v0.2.0-BETA
+# CuePath — v0.2.1-BETA
 [繁體中文版](./README.zh-Hant.md)
 
 ![CuePath Interface](./assets/cuepath-screenshot.png)
@@ -6,7 +6,7 @@
 CuePath is a lightweight player designed specifically for music transcription and audio reference marking.
 
 > **BETA Notes:**
-> - Current version: v0.2.0-BETA (player core extracted into an embeddable ES module; the standalone app is unchanged for users).
+> - Current version: v0.2.1-BETA (player core extracted into an embeddable ES module; the standalone app is unchanged for users).
 > - **Professional Saving:** Once a `.cuepath` file is saved/linked, `Ctrl+S` performs a silent overwrite using the File System Access API.
 > - **Smart Markers:** Markers now use a dynamic lane system to prevent label overlap.
 > - **Region Editing:** Regions can now be resized by dragging their boundaries on the timeline.
@@ -121,14 +121,14 @@ return () => cp.destroy();
 ```
 
 API: `loadFile(file)`, `loadUrl(url, { peaksUrl?, peaks?, title?, fetchOptions?, crossOrigin? })`, `loadPeaks(json)`,
-`getState()` / `setState(state)`, `on(event, cb)` (returns an unsubscribe function) / `off`, `play()`, `pause()`,
+`getState()` / `setState(state)`, `clearProject()` (resets markers, regions, loop, title and audio exactly like the Clear button, but **never shows a confirm dialog** - the host app is responsible for confirming; it emits `change`), `on(event, cb)` (returns an unsubscribe function) / `off`, `play()`, `pause()`,
 `seek(s)`, `setPlaybackRate(r)`, `getAudioElement()`, `toCsv()`, `toMarkdown()`, `exportProject()`, `destroy()`.
 Events: `ready`, `peaks`, `change`, `timeupdate`, `play`, `pause`, `message`, `error`, `save-request` (Ctrl+S; if nobody listens, a `.cuepath` file is saved).
 `loadUrl` streams through `<audio src>` and never decodes the file when peaks are supplied; without peaks it falls back to
 decoding the whole file. `destroy()` removes every listener, animation frame, in-flight fetch and AudioContext. A
 `loadUrl()` still pending at `destroy()` rejects with `Error("destroyed")`.
 
-Options for a host app that wants more or less UI: `ui: { toolbar, loadButton, downloads }`, `shortcuts` / `dragDrop`
+Options for a host app that wants more or less UI: `ui: { toolbar, headerActions, loadButton, downloads }` (`headerActions: false` hides the import / export CuePath / export CSV / export Markdown / clear buttons; default `true`), `shortcuts` / `dragDrop`
 (`"root"` by default, `"document"`, or `false`), `header: { logoSrc, logoAlt, tag, version }`. The `standalone: true` flag
 (used by `CuePath.html`) turns on the app-level behaviour: save/replace dialogs, unload guard, downloads folder, document-wide
 shortcuts and drop target. Peaks format: [docs/peaks-format.md](./docs/peaks-format.md).

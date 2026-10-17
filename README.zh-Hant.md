@@ -1,4 +1,4 @@
-# CuePath — v0.2.0-BETA
+# CuePath — v0.2.1-BETA
 
 [English Version](./README.md)
 
@@ -8,7 +8,7 @@
 CuePath 是一個專為音樂採譜與參考音檔標記設計的輕量級播放器。
 
 > **BETA 測試說明：**
-> - 目前版本為 v0.2.0-BETA（播放器核心抽成可嵌入的 ES module；獨立版對使用者沒有改變）。
+> - 目前版本為 v0.2.1-BETA（播放器核心抽成可嵌入的 ES module；獨立版對使用者沒有改變）。
 > - **專業儲存體驗**：實裝 File System Access API，一旦連結檔案後，`Ctrl+S` 將直接覆寫存檔而不彈出視窗。
 > - **智能標記系統**：Marker 實裝智能避讓軌道，解決標籤重疊問題。
 > - **區段邊界拖曳**：支援直接在時間軸上拖曳 Region 的左右邊界以調整時間。
@@ -137,7 +137,7 @@ API：`loadFile(file)`、`loadUrl(url, { peaksUrl?, peaks?, title?, fetchOptions
 `loadUrl` 以 `<audio src>` 串流播放；有提供 peaks 時**不會**下載或解碼整個檔案；沒有 peaks 時退回整檔解碼。
 `destroy()` 會移除所有事件監聽、動畫幀、進行中的 fetch 與 AudioContext；`destroy()` 時仍在進行的 `loadUrl()` 會以 `Error("destroyed")` reject。
 
-想調整介面的宿主可用 `ui: { toolbar, loadButton, downloads }`、`shortcuts` / `dragDrop`（預設 `"root"`，可設 `"document"` 或 `false`）、
+想調整介面的宿主可用 `ui: { toolbar, headerActions, loadButton, downloads }`（`headerActions: false` 隱藏匯入／匯出 CuePath／匯出 CSV／匯出 Markdown／清除按鈕；預設 `true`）、`shortcuts` / `dragDrop`（預設 `"root"`，可設 `"document"` 或 `false`）、
 `header: { logoSrc, logoAlt, tag, version }`。`standalone: true`（`CuePath.html` 使用）會啟用應用層行為：儲存/取代對話框、離開頁面警告、
 downloads 資料夾、全頁快捷鍵與拖放。Peaks 格式：[docs/peaks-format.md](./docs/peaks-format.md)。
 

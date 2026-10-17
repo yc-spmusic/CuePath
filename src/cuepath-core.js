@@ -288,7 +288,7 @@ export function parsePeaks(input) {
  * @param {string|null} [options.documentTitle]  when set, document.title is maintained (with dirty marker)
  * @param {"root"|"document"|false} [options.shortcuts]  keyboard shortcut scope (default root, standalone: document)
  * @param {"root"|"document"|false} [options.dragDrop]   drop target (default root, standalone: document)
- * @param {object}  [options.ui]  { toolbar, loadButton, downloads } booleans
+ * @param {object}  [options.ui]  { toolbar, headerActions, loadButton, downloads } booleans (headerActions: import/export/clear buttons in the toolbar, default true)
  * @param {boolean} [options.decodeFallback=true]  decode whole file for the waveform when no peaks are given
  */
 export function createCuePath(rootElement, options) {
@@ -304,7 +304,7 @@ export function createCuePath(rootElement, options) {
     documentTitle: typeof o.documentTitle === "string" ? o.documentTitle : null,
     shortcuts: o.shortcuts === undefined ? (standalone ? "document" : "root") : o.shortcuts,
     dragDrop: o.dragDrop === undefined ? (standalone ? "document" : "root") : o.dragDrop,
-    ui: Object.assign({ toolbar: true, loadButton: standalone, downloads: standalone }, o.ui || {}),
+    ui: Object.assign({ toolbar: true, headerActions: true, loadButton: standalone, downloads: standalone }, o.ui || {}),
     decodeFallback: o.decodeFallback !== false
   };
   const L = opts.labels;
@@ -368,7 +368,7 @@ export function createCuePath(rootElement, options) {
   rootElement.innerHTML =
     '<nav class="top-nav' + (opts.ui.toolbar ? "" : " cp-hidden") + '">' + headerHtml +
       '<input data-cp="projectTitleInput" class="cp-project-title" type="text" aria-label="' + escapeHtml(t("projectTitleAria")) + '" spellcheck="false">' +
-      '<div class="nav-actions">' +
+      '<div class="nav-actions' + (opts.ui.headerActions ? "" : " cp-hidden") + '">' +
         '<button data-cp="importJsonButton" type="button" class="btn-nav">' + escapeHtml(t("importProject")) + "</button>" +
         '<button data-cp="exportJsonButton" type="button" class="btn-nav">' + escapeHtml(t("exportProject")) + "</button>" +
         '<button data-cp="exportCsvButton" type="button" class="btn-nav">' + escapeHtml(t("exportCsv")) + "</button>" +
@@ -1362,8 +1362,14 @@ export function createCuePath(rootElement, options) {
     reader.readAsText(file);
   }
 
-  function clearProject() {
+  function clearProjectWithConfirm() {
     if (!win.confirm(t("confirmClear"))) return;
+    clearProject();
+  }
+
+  /* Public API: same as the Clear button but never prompts (the host owns confirmation). */
+  function clearProject() {
+    if (destroyed) return;
     state = createInitialState(t("defaultProjectTitle")); hasLoadedAudioBody = false;
     hasProjectFileReference = false;
     projectFileSavePrompted = false;
@@ -1770,7 +1776,7 @@ export function createCuePath(rootElement, options) {
     listen(dom.exportJsonButton, "click", exportJson);
     listen(dom.exportCsvButton, "click", exportCsv);
     listen(dom.exportMarkdownButton, "click", exportMarkdown);
-    listen(dom.clearProjectButton, "click", clearProject);
+    listen(dom.clearProjectButton, "click", clearProjectWithConfirm);
     listen(dom.setDownloadsFolderButton, "click", () => setDownloadsFolder().catch(() => setMessage(t("msgDownloadsSetFailed"), true)));
     listen(dom.refreshDownloadsButton, "click", () => refreshDownloadsStatus({ requestPermission: true, tryReloadAudio: true }).catch(() => setMessage(t("msgDownloadsRefreshFailed"), true)));
     listen(dom.projectTitleInput, "change", function () {
@@ -1899,6 +1905,7 @@ export function createCuePath(rootElement, options) {
     loadFile,
     loadUrl,
     loadPeaks,
+    clearProject,
     destroy,
     on,
     off,

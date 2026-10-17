@@ -134,12 +134,35 @@ try {
   check("default storage key untouched", localStorage.getItem("cuepath:html:mvp") === null);
 
   /* 5. controls: seek, rate, exports */
+  const savedForClear = cp.getState();
   cp.seek(1.0);
   check("seek moves currentTime", Math.abs(cp.getAudioElement().currentTime - 1.0) < 0.05, cp.getAudioElement().currentTime);
   cp.setPlaybackRate(0.5);
   check("playback rate applied", cp.getAudioElement().playbackRate === 0.5);
   check("csv export contains marker", cp.toCsv().includes("hello"));
   check("markdown export contains region", cp.toMarkdown().includes("reg"));
+
+  /* 5b. clearProject API (no confirm) + ui.headerActions */
+  let confirmCalls = 0;
+  const realConfirm = window.confirm;
+  window.confirm = () => { confirmCalls++; return true; };
+  let changeEvents = 0;
+  const offChange = cp.on("change", () => { changeEvents++; });
+  cp.clearProject();
+  offChange();
+  window.confirm = realConfirm;
+  const cleared = cp.getState();
+  check("clearProject clears markers/regions without confirm", cleared.markers.length === 0 && cleared.regions.length === 0 && confirmCalls === 0, confirmCalls);
+  check("clearProject emits change", changeEvents >= 1, changeEvents);
+  check("headerActions default: shown", !host.querySelector(".nav-actions").classList.contains("cp-hidden"));
+  {
+    const h2 = document.createElement("div"); document.body.appendChild(h2);
+    const c2 = createCuePath(h2, { storageKey: STORAGE + ":ha", ui: { headerActions: false } });
+    const na = h2.querySelector(".nav-actions");
+    check("ui.headerActions:false hides buttons", getComputedStyle(na).display === "none" && getComputedStyle(h2.querySelector(".top-nav")).display !== "none");
+    c2.destroy(); h2.remove();
+  }
+  cp.setState(savedForClear);
 
   /* 6. fallback decode (no peaks) */
   decodeCalls = 0;

@@ -2,6 +2,14 @@
 
 所有對 CuePath 的重要更新都會記錄在此檔案中。 / All notable changes to CuePath will be documented in this file.
 
+## [0.2.1-BETA] - 2026-10-17
+
+### 新增功能 / New Features
+- **`ui.headerActions`**: 設為 `false` 可隱藏工具列的匯入／匯出／清除按鈕，預設仍顯示。 / `ui.headerActions: false` hides the toolbar import/export/clear buttons; default unchanged (shown).
+- **`clearProject()`**: 新增公開 API，行為同「清除」按鈕但**不會跳出確認視窗**，確認由宿主負責；會觸發 `change` 事件。 / New public API behaving like the Clear button but **without the confirm dialog** (the host app confirms); emits `change`.
+
+---
+
 ## [0.2.0-BETA] - 2026-10-17
 
 ### 新增功能 / New Features
